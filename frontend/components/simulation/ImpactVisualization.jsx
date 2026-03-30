@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * ImpactVisualization - Displays simulation results including total impact,
+ * affected shipments, cascade effects, and recommendations.
+ * @param {Object} props
+ * @param {Object} props.result - Simulation result object from the API.
+ */
 export function ImpactVisualization({ result }) {
   const priorityColors = {
     CRITICAL: 'text-danger',

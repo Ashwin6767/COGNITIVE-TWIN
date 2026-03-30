@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Cognitive Twin — Frontend Dashboard
 
-## Getting Started
+Next.js 15 dashboard for real-time supply chain intelligence, simulation, and AI-driven decision support.
 
-First, run the development server:
+## Quick Start
+
+```bash
+npm install
+```
+
+Create a `.env.local` file:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Component Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Folder | Components | Description |
+|---|---|---|
+| `components/alerts/` | AlertsPanel, AlertCard | Port congestion alerts sorted by severity |
+| `components/chat/` | ChatPanel, ChatMessage, SuggestionChips | AI chat interface with history and quick prompts |
+| `components/layout/` | Header | Top navigation bar with live-status indicator |
+| `components/map/` | SupplyChainMap | Leaflet map with port and vessel markers |
+| `components/simulation/` | SimulationPanel, ImpactVisualization | Delay simulation controls and results |
+| `components/recommendations/` | RecommendationPanel | AI-generated action recommendations |
+| `components/ui/` | Skeleton, ErrorCard | Shared loading and error UI primitives |
 
-## Learn More
+Each folder includes an `index.js` barrel export for clean imports.
 
-To learn more about Next.js, take a look at the following resources:
+Shared constants (alert styles, port lists, map defaults) live in `lib/constants.js`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Styling
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Tailwind CSS v4** with a dark theme and custom CSS variables (`bg-bg-primary`, `text-text-secondary`, etc.)
+- All components use utility classes — no external CSS modules
 
-## Deploy on Vercel
+## API Integration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **React Query** (`@tanstack/react-query`) for server-state management with automatic refetch
+- API client in `lib/api.js` wraps all backend endpoints

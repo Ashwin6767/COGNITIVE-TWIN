@@ -3,9 +3,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Bot } from 'lucide-react'
 import { api } from '@/lib/api'
+import { CHAT_SUGGESTIONS } from '@/lib/constants'
 import { ChatMessage } from './ChatMessage'
 import { SuggestionChips } from './SuggestionChips'
 
+/**
+ * ChatPanel - AI chat interface with message history, text input, and
+ * suggestion chips for quick prompts.
+ */
 export function ChatPanel() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -45,13 +50,6 @@ export function ChatPanel() {
     }
   }
 
-  const suggestions = [
-    "What happens if Port Shanghai is delayed by 6 hours?",
-    "What are the highest risk ports?",
-    "Suggest reroute options for S001",
-    "Give me a supply chain overview",
-  ]
-
   return (
     <div className="bg-bg-secondary rounded-lg border border-border flex flex-col h-full">
       <div className="p-3 border-b border-border flex items-center gap-2">
@@ -63,7 +61,7 @@ export function ChatPanel() {
         {messages.length === 0 && (
           <div className="text-center text-text-secondary text-sm py-8">
             <p>Ask about your supply chain...</p>
-            <SuggestionChips suggestions={suggestions} onSelect={handleSend} />
+            <SuggestionChips suggestions={CHAT_SUGGESTIONS} onSelect={handleSend} />
           </div>
         )}
 

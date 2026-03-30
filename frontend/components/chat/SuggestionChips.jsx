@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * SuggestionChips - Renders clickable suggestion buttons for quick chat prompts.
+ * @param {Object} props
+ * @param {string[]} props.suggestions - Array of suggestion text strings.
+ * @param {Function} props.onSelect - Callback invoked with the selected suggestion text.
+ */
 export function SuggestionChips({ suggestions, onSelect }) {
   return (
     <div className="flex flex-wrap gap-2 mt-4 justify-center">

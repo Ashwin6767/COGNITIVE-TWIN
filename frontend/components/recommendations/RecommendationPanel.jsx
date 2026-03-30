@@ -2,6 +2,10 @@
 
 import { Lightbulb } from 'lucide-react'
 
+/**
+ * RecommendationPanel - Shows AI-generated recommendations; prompts the user
+ * to run a simulation when no results are available.
+ */
 export function RecommendationPanel() {
   return (
     <div className="bg-bg-secondary rounded-lg border border-border">

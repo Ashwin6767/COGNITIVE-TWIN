@@ -5,6 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { PORT_RISK_COLORS, MAP_CENTER, MAP_ZOOM } from '@/lib/constants'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -13,14 +14,9 @@ L.Icon.Default.mergeOptions({
 })
 
 const getPortIcon = (congestionLevel) => {
-  const colors = {
-    LOW: '#22C55E',
-    MEDIUM: '#F59E0B',
-    HIGH: '#EF4444',
-    CRITICAL: '#DC2626',
-  }
+  const color = PORT_RISK_COLORS[congestionLevel] || '#3B82F6'
   return L.divIcon({
-    html: `<div style="width: 20px; height: 20px; border-radius: 50%; background: ${colors[congestionLevel] || '#3B82F6'}; border: 2px solid white; box-shadow: 0 0 8px ${colors[congestionLevel]}40;"></div>`,
+    html: `<div style="width: 20px; height: 20px; border-radius: 50%; background: ${color}; border: 2px solid white; box-shadow: 0 0 8px ${color}40;"></div>`,
     className: '',
     iconSize: [20, 20],
   })
@@ -32,6 +28,10 @@ const vesselIcon = L.divIcon({
   iconSize: [30, 30],
 })
 
+/**
+ * SupplyChainMap - Leaflet map showing ports (color-coded by congestion) and
+ * vessels on dark-themed tiles.
+ */
 export default function SupplyChainMap() {
   const { data: ports, isLoading: portsLoading } = useQuery({
     queryKey: ['ports'],
@@ -49,8 +49,8 @@ export default function SupplyChainMap() {
 
   return (
     <MapContainer
-      center={[20, 80]}
-      zoom={3}
+      center={MAP_CENTER}
+      zoom={MAP_ZOOM}
       className="w-full h-full rounded-lg"
       style={{ background: '#0F172A' }}
     >

@@ -3,22 +3,18 @@
 import { useState } from 'react'
 import { Activity, Play } from 'lucide-react'
 import { api } from '@/lib/api'
+import { SIMULATION_PORTS } from '@/lib/constants'
 import { ImpactVisualization } from './ImpactVisualization'
 
+/**
+ * SimulationPanel - Controls for running delay simulations with a port
+ * selector and delay slider, displaying results via ImpactVisualization.
+ */
 export function SimulationPanel() {
   const [portId, setPortId] = useState('P001')
   const [delayHours, setDelayHours] = useState(6)
   const [result, setResult] = useState(null)
   const [isRunning, setIsRunning] = useState(false)
-
-  const ports = [
-    { id: 'P001', name: 'Shanghai' },
-    { id: 'P002', name: 'Singapore' },
-    { id: 'P003', name: 'Los Angeles' },
-    { id: 'P004', name: 'Rotterdam' },
-    { id: 'P005', name: 'Dubai' },
-    { id: 'P006', name: 'Mumbai' },
-  ]
 
   const handleSimulate = async () => {
     setIsRunning(true)
@@ -48,7 +44,7 @@ export function SimulationPanel() {
               onChange={e => setPortId(e.target.value)}
               className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-sm"
             >
-              {ports.map(p => (
+              {SIMULATION_PORTS.map(p => (
                 <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
               ))}
             </select>

@@ -5,6 +5,10 @@ import { AlertTriangle } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AlertCard } from './AlertCard'
 
+/**
+ * AlertsPanel - Panel listing port congestion alerts fetched from the API,
+ * sorted by severity.
+ */
 export function AlertsPanel() {
   const { data: ports, isLoading } = useQuery({
     queryKey: ['ports'],

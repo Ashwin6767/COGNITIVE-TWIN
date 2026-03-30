@@ -2,6 +2,11 @@
 
 import { Bot, User } from 'lucide-react'
 
+/**
+ * ChatMessage - Renders a single chat message bubble with role-based styling.
+ * @param {Object} props
+ * @param {Object} props.message - Message object with role, content, tools, cached, and error fields.
+ */
 export function ChatMessage({ message }) {
   const isUser = message.role === 'user'
 

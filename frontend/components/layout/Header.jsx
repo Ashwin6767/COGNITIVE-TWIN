@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { Brain, RefreshCw } from 'lucide-react'
 import { api } from '@/lib/api'
 
+/**
+ * Header - Top navigation bar with logo, live-status indicator, and reset button.
+ */
 export function Header() {
   const [isResetting, setIsResetting] = useState(false)
 
