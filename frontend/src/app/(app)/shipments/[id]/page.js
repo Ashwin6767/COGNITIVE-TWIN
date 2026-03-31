@@ -108,7 +108,8 @@ export default function ShipmentDetailPage({ params }) {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    executeTransition(formModal.toStatus, formData, formNotes);
+    const notes = formData.notes || '';
+    executeTransition(formModal.toStatus, formData, notes);
   };
 
   if (loading) return <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-32 w-full" />)}</div>;
@@ -235,8 +236,9 @@ export default function ShipmentDetailPage({ params }) {
                       </select>
                     ) : field.type === 'textarea' ? (
                       <textarea
-                        className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-20"
+                        className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-14 resize-y"
                         required={field.required}
+                        placeholder={field.required ? '' : 'Optional...'}
                         value={formData[field.name] || ''}
                         onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
                       />
@@ -260,15 +262,6 @@ export default function ShipmentDetailPage({ params }) {
                 ))}
               </div>
             ))}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#0F172A]">Notes</label>
-              <textarea
-                className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-16"
-                value={formNotes}
-                onChange={e => setFormNotes(e.target.value)}
-                placeholder="Optional notes..."
-              />
-            </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" onClick={() => setFormModal({ open: false, toStatus: '', requiredForm: null })}>Cancel</Button>
               <Button type="submit" disabled={transitioning}>{transitioning ? 'Submitting...' : 'Submit & Transition'}</Button>

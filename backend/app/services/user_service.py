@@ -110,9 +110,7 @@ class UserService:
     async def get_available_drivers(self) -> list[dict]:
         results = await graph_service.run("""
             MATCH (u:User {role: 'DRIVER', is_active: true})
-            WHERE NOT (u)-[:ASSIGNED_PICKUP]->(:Shipment {status: 'PICKUP_EN_ROUTE'})
-              AND NOT (u)-[:ASSIGNED_PICKUP]->(:Shipment {status: 'DRIVER_ASSIGNED'})
-            RETURN u {.id, .name, .license_number, .license_type} AS driver
+            RETURN u {.id, .name, .license_number, .license_type, .phone} AS driver
         """)
         return [r["driver"] for r in results]
 
