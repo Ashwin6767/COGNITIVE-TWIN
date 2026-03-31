@@ -12,10 +12,10 @@ export function ShipmentTimeline({ events = [] }) {
       {events.map((event, i) => (
         <div key={i} className="flex gap-4">
           <div className="flex flex-col items-center">
-            {i === 0 ? (
+            {i < events.length - 1 ? (
               <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
             ) : (
-              <Circle className="w-5 h-5 text-[#94A3B8] shrink-0" />
+              <Clock className="w-5 h-5 text-blue-500 shrink-0" />
             )}
             {i < events.length - 1 && <div className="w-0.5 h-full bg-[#E2E8F0] min-h-8" />}
           </div>
