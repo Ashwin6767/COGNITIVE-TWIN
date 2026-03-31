@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { ArrowLeft, FileText, Plus } from 'lucide-react';
+import { ArrowLeft, FileText, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
 const FORM_TYPES = [
@@ -39,6 +39,7 @@ export default function ShipmentDocumentsPage({ params }) {
   const [formSchema, setFormSchema] = useState(null);
   const [formData, setFormData] = useState({});
   const [dynamicOptions, setDynamicOptions] = useState({});
+  const [expandedDoc, setExpandedDoc] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -215,23 +216,60 @@ export default function ShipmentDocumentsPage({ params }) {
           {documents.length === 0 ? (
             <EmptyState title="No documents yet" description="Submit a document using the button above." icon={FileText} />
           ) : (
-            <div className="divide-y divide-[#E2E8F0]">
-              {documents.map(d => (
-                <div key={d.id} className="flex items-center justify-between py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-50">
-                      <FileText className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-[#0F172A]">{d.form_type?.replace(/_/g, ' ')}</p>
-                      <p className="text-xs text-[#64748B]">{formatDateTime(d.created_at)} · Submitted by {d.submitted_by || '—'}</p>
-                    </div>
+            <div className="space-y-3">
+              {documents.map(d => {
+                const isExpanded = expandedDoc === d.id;
+                return (
+                  <div key={d.id} className="border border-[#E2E8F0] rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setExpandedDoc(isExpanded ? null : d.id)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-[#F8FAFC] transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-50">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#0F172A]">{d.form_type?.replace(/_/g, ' ') || d.type?.replace(/_/g, ' ')}</p>
+                          <p className="text-xs text-[#64748B]">{formatDateTime(d.submitted_at || d.created_at)} · by {d.submitted_by_name || d.submitted_by || '—'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant={d.status === 'APPROVED' ? 'success' : d.status === 'REJECTED' ? 'danger' : 'info'}>
+                          {d.status || 'SUBMITTED'}
+                        </Badge>
+                        {isExpanded ? <ChevronDown className="w-4 h-4 text-[#94A3B8]" /> : <ChevronRight className="w-4 h-4 text-[#94A3B8]" />}
+                      </div>
+                    </button>
+                    {isExpanded && d.data && (
+                      <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                        <h4 className="text-xs font-medium text-[#64748B] uppercase tracking-wider mb-3">Form Data</h4>
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                          {Object.entries(d.data).map(([key, value]) => (
+                            <div key={key} className="flex flex-col">
+                              <dt className="text-xs text-[#94A3B8]">{key.replace(/_/g, ' ')}</dt>
+                              <dd className="text-sm text-[#0F172A]">
+                                {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (String(value) || '—')}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                        {d.notes && (
+                          <div className="mt-3 pt-3 border-t border-[#E2E8F0]">
+                            <p className="text-xs text-[#94A3B8]">Notes</p>
+                            <p className="text-sm text-[#0F172A]">{d.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {isExpanded && !d.data && (
+                      <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                        <p className="text-sm text-[#94A3B8]">No form data recorded.</p>
+                      </div>
+                    )}
                   </div>
-                  <Badge variant={d.status === 'APPROVED' ? 'success' : d.status === 'REJECTED' ? 'danger' : 'info'}>
-                    {d.status || 'SUBMITTED'}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

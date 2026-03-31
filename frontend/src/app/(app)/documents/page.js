@@ -14,12 +14,25 @@ import { formatDateTime } from '@/lib/utils';
 export default function DocumentsPage() {
   const { user } = useAuth();
   const [shipments, setShipments] = useState([]);
+  const [docCounts, setDocCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     api.get('/shipments/?page=1&limit=50')
-      .then(data => setShipments(data.items || []))
+      .then(async (data) => {
+        const items = data.items || [];
+        setShipments(items);
+        // Fetch doc counts for each shipment
+        const counts = {};
+        await Promise.all(items.map(async (s) => {
+          try {
+            const docs = await api.get(`/documents/shipment/${s.id}`);
+            counts[s.id] = Array.isArray(docs) ? docs.length : 0;
+          } catch { counts[s.id] = 0; }
+        }));
+        setDocCounts(counts);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -75,6 +88,9 @@ export default function DocumentsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={s.status} />
+                    {docCounts[s.id] > 0 && (
+                      <Badge variant="info">{docCounts[s.id]} doc{docCounts[s.id] > 1 ? 's' : ''}</Badge>
+                    )}
                     <ArrowRight className="w-4 h-4 text-[#94A3B8]" />
                   </div>
                 </Link>
