@@ -1,1 +1,0 @@
-export { RecommendationPanel } from './RecommendationPanel';

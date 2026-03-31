@@ -1,90 +1,58 @@
-import traceback
 from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-
 from app.config import settings
 from app.services.graph_service import graph_service
-from app.routers import graph, simulation, agent, websocket
+from app.services.event_service import websocket_endpoint
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Connect to Neo4j on startup, disconnect on shutdown."""
+    # Startup
+    print("Connecting to Neo4j...")
     try:
         await graph_service.connect()
-    except Exception as exc:
-        print(f"⚠ Neo4j connection failed: {exc}")
-        print("  Backend will start but graph queries will fail until DB is available.")
+        await graph_service.setup_constraints()
+        print("Neo4j connected, constraints set up")
+    except Exception as e:
+        print(f"WARNING: Neo4j connection failed: {e}")
     yield
-    await graph_service.close()
+    # Shutdown
+    await graph_service.disconnect()
+    print("Neo4j disconnected")
 
 
 app = FastAPI(
-    title="Cognitive Twin API",
-    description="Decision-intelligence supply chain system",
-    version="0.1.0",
+    title="Cognitive Twin — Logistics Platform",
+    description="Graph-based logistics management with AI decision engine",
+    version="2.0.0",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
-# ── CORS (Issue #2) ──────────────────────────────────────
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        settings.frontend_url,
-    ],
+    allow_origins=[settings.frontend_url, "http://localhost:3000", "http://localhost:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Routers ───────────────────────────────────────────────
-app.include_router(graph.router, prefix="/api/graph", tags=["graph"])
-app.include_router(simulation.router, prefix="/api/simulate", tags=["simulation"])
-app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
-app.include_router(websocket.router, prefix="/api/ws", tags=["websocket"])
+# Import and register routers
+from app.routers import auth, shipments, workflow, documents, notifications, users, ports, vessels, containers, yard, system  # noqa: E402
 
+app.include_router(auth.router)
+app.include_router(shipments.router)
+app.include_router(workflow.router)
+app.include_router(documents.router)
+app.include_router(notifications.router)
+app.include_router(users.router)
+app.include_router(ports.router)
+app.include_router(vessels.router)
+app.include_router(containers.router)
+app.include_router(yard.router)
+app.include_router(system.router)
 
-# ── System Endpoints ──────────────────────────────────────
-
-@app.get("/api/health")
-async def health():
-    return {"status": "healthy", "service": "cognitive-twin"}
-
-
-@app.post("/api/seed")
-async def seed():
-    from app.seed.seed_data import run_seed
-    await run_seed(graph_service)
-    return {"status": "seeded"}
-
-
-@app.post("/api/reset")
-async def reset():
-    from app.seed.seed_data import run_seed
-    await graph_service.run("MATCH (n) DETACH DELETE n")
-    await run_seed(graph_service)
-    return {"status": "reset_complete"}
-
-
-@app.post("/api/heartbeat")
-async def heartbeat():
-    await graph_service.run(
-        "MERGE (s:System {id: 'heartbeat'}) SET s.last_ping = datetime()"
-    )
-    return {"status": "alive"}
-
-
-# ── Global Error Handler (Issue #18) ──────────────────────
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    traceback.print_exc()
-    detail = str(exc) if settings.environment == "development" else "An unexpected error occurred"
-    return JSONResponse(
-        status_code=500,
-        content={"error": "Internal server error", "detail": detail},
-    )
+# WebSocket
+app.add_api_websocket_route("/api/ws/stream", websocket_endpoint)

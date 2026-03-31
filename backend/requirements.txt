@@ -3,9 +3,15 @@ uvicorn[standard]==0.34.*
 neo4j==5.27.*
 google-genai==1.5.*
 pydantic==2.10.*
-pydantic-settings>=2.6,<3
-python-dotenv==1.0.*
+pydantic-settings==2.7.*
+python-jose[cryptography]==3.3.*
+passlib[bcrypt]==1.7.*
+python-multipart==0.0.*
 httpx==0.28.*
 websockets==14.*
-pytest==8.*
+python-dotenv==1.0.*
+
+# Dev/Test
+pytest==8.3.*
 pytest-asyncio==0.24.*
+pytest-httpx==0.35.*

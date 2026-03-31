@@ -9,9 +9,11 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     environment: str = "development"
     demo_mode: bool = False
+    jwt_secret: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 30
 
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env"}
 
 
 settings = Settings()
