@@ -17,8 +17,23 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     api.get('/shipments/my')
-      .then(setShipments)
-      .catch(() => {})
+      .then(data => {
+        const items = data.items || data || [];
+        if (items.length > 0) {
+          setShipments(items);
+        } else {
+          // Fallback: fetch all shipments if /shipments/my returns empty
+          return api.get('/shipments/?page=1&limit=50').then(fallback => {
+            setShipments(fallback.items || fallback || []);
+          });
+        }
+      })
+      .catch(() => {
+        // Fallback on error
+        api.get('/shipments/?page=1&limit=50')
+          .then(data => setShipments(data.items || data || []))
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, []);
 

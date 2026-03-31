@@ -37,7 +37,8 @@ const NAV_BY_ROLE = {
   ],
   CUSTOMS_OFFICER: [
     { label: 'Dashboard', href: '/dashboard/customs', icon: LayoutDashboard },
-    { label: 'Review Queue', href: '/shipments', icon: ClipboardCheck },
+    { label: 'Priority', href: '/shipments', icon: ClipboardCheck },
+    { label: 'Documents', href: '/documents', icon: FileText },
     { label: 'Notifications', href: '/notifications', icon: Bell },
   ],
   YARD_MANAGER: [

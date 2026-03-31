@@ -99,6 +99,107 @@ PORTS = [
         "lat": 19.00, "lon": 72.87, "congestion": "HIGH",
         "avg_delay_hours": 5.0, "capacity_teu": 18000, "utilization": 0.90,
     },
+    # --- 20 additional real-world ports ---
+    {
+        "id": "P007", "name": "Port of Busan", "country": "South Korea",
+        "lat": 35.1, "lon": 129.0, "congestion": "MEDIUM",
+        "avg_delay_hours": 2.2, "capacity_teu": 22000, "utilization": 0.72,
+    },
+    {
+        "id": "P008", "name": "Port of Hong Kong", "country": "China",
+        "lat": 22.3, "lon": 114.2, "congestion": "HIGH",
+        "avg_delay_hours": 3.8, "capacity_teu": 20000, "utilization": 0.80,
+    },
+    {
+        "id": "P009", "name": "Port of Hamburg", "country": "Germany",
+        "lat": 53.5, "lon": 10.0, "congestion": "LOW",
+        "avg_delay_hours": 1.8, "capacity_teu": 14000, "utilization": 0.58,
+    },
+    {
+        "id": "P010", "name": "Port of Antwerp", "country": "Belgium",
+        "lat": 51.2, "lon": 4.4, "congestion": "MEDIUM",
+        "avg_delay_hours": 2.4, "capacity_teu": 16000, "utilization": 0.68,
+    },
+    {
+        "id": "P011", "name": "Port of Felixstowe", "country": "United Kingdom",
+        "lat": 51.9, "lon": 1.3, "congestion": "LOW",
+        "avg_delay_hours": 1.2, "capacity_teu": 10000, "utilization": 0.52,
+    },
+    {
+        "id": "P012", "name": "Port of Tokyo", "country": "Japan",
+        "lat": 35.6, "lon": 139.8, "congestion": "MEDIUM",
+        "avg_delay_hours": 1.5, "capacity_teu": 15000, "utilization": 0.60,
+    },
+    {
+        "id": "P013", "name": "Port of Colombo", "country": "Sri Lanka",
+        "lat": 6.9, "lon": 79.8, "congestion": "MEDIUM",
+        "avg_delay_hours": 3.0, "capacity_teu": 12000, "utilization": 0.74,
+    },
+    {
+        "id": "P014", "name": "Port of Jeddah", "country": "Saudi Arabia",
+        "lat": 21.5, "lon": 39.2, "congestion": "LOW",
+        "avg_delay_hours": 1.6, "capacity_teu": 11000, "utilization": 0.45,
+    },
+    {
+        "id": "P015", "name": "Port of Tanjung Pelepas", "country": "Malaysia",
+        "lat": 1.4, "lon": 103.5, "congestion": "LOW",
+        "avg_delay_hours": 1.3, "capacity_teu": 13000, "utilization": 0.50,
+    },
+    {
+        "id": "P016", "name": "Port of Long Beach", "country": "United States",
+        "lat": 33.8, "lon": -118.2, "congestion": "MEDIUM",
+        "avg_delay_hours": 3.2, "capacity_teu": 18000, "utilization": 0.73,
+    },
+    {
+        "id": "P017", "name": "Port of Savannah", "country": "United States",
+        "lat": 32.1, "lon": -81.1, "congestion": "LOW",
+        "avg_delay_hours": 1.0, "capacity_teu": 12000, "utilization": 0.55,
+    },
+    {
+        "id": "P018", "name": "Port of Piraeus", "country": "Greece",
+        "lat": 37.9, "lon": 23.6, "congestion": "MEDIUM",
+        "avg_delay_hours": 2.8, "capacity_teu": 10000, "utilization": 0.66,
+    },
+    {
+        "id": "P019", "name": "Port of Durban", "country": "South Africa",
+        "lat": -29.9, "lon": 31.0, "congestion": "HIGH",
+        "avg_delay_hours": 4.0, "capacity_teu": 9000, "utilization": 0.82,
+    },
+    {
+        "id": "P020", "name": "Port of Santos", "country": "Brazil",
+        "lat": -23.9, "lon": -46.3, "congestion": "HIGH",
+        "avg_delay_hours": 4.2, "capacity_teu": 14000, "utilization": 0.88,
+    },
+    {
+        "id": "P021", "name": "Port of Mundra", "country": "India",
+        "lat": 22.7, "lon": 69.7, "congestion": "LOW",
+        "avg_delay_hours": 1.4, "capacity_teu": 16000, "utilization": 0.48,
+    },
+    {
+        "id": "P022", "name": "Port of Kaohsiung", "country": "Taiwan",
+        "lat": 22.6, "lon": 120.3, "congestion": "MEDIUM",
+        "avg_delay_hours": 2.0, "capacity_teu": 13000, "utilization": 0.62,
+    },
+    {
+        "id": "P023", "name": "Port of Laem Chabang", "country": "Thailand",
+        "lat": 13.1, "lon": 100.9, "congestion": "MEDIUM",
+        "avg_delay_hours": 2.6, "capacity_teu": 11000, "utilization": 0.70,
+    },
+    {
+        "id": "P024", "name": "Port of Jawaharlal Nehru", "country": "India",
+        "lat": 18.9, "lon": 72.9, "congestion": "HIGH",
+        "avg_delay_hours": 4.8, "capacity_teu": 15000, "utilization": 0.86,
+    },
+    {
+        "id": "P025", "name": "Port of Valencia", "country": "Spain",
+        "lat": 39.4, "lon": -0.3, "congestion": "LOW",
+        "avg_delay_hours": 1.1, "capacity_teu": 9500, "utilization": 0.42,
+    },
+    {
+        "id": "P026", "name": "Port of Algeciras", "country": "Spain",
+        "lat": 36.1, "lon": -5.4, "congestion": "LOW",
+        "avg_delay_hours": 1.0, "capacity_teu": 8500, "utilization": 0.38,
+    },
 ]
 
 VESSELS = [
@@ -122,6 +223,37 @@ VESSELS = [
         "flag": "Greece", "capacity_teu": 6000, "current_load_teu": 2100,
         "status": "APPROACHING", "lat": 35.8, "lon": -5.2, "speed_knots": 14,
     },
+    # --- 6 additional vessels ---
+    {
+        "id": "V005", "name": "Pacific Harmony", "imo": "IMO 9345678",
+        "flag": "Panama", "capacity_teu": 8500, "current_load_teu": 6100,
+        "status": "IN_PORT", "lat": 31.23, "lon": 121.47, "speed_knots": 0,
+    },
+    {
+        "id": "V006", "name": "Atlantic Pioneer", "imo": "IMO 9456789",
+        "flag": "Liberia", "capacity_teu": 12000, "current_load_teu": 9400,
+        "status": "AT_SEA", "lat": 28.5, "lon": -45.3, "speed_knots": 19,
+    },
+    {
+        "id": "V007", "name": "Nordic Star", "imo": "IMO 9567890",
+        "flag": "Marshall Islands", "capacity_teu": 6200, "current_load_teu": 3800,
+        "status": "IN_PORT", "lat": 33.74, "lon": -118.27, "speed_knots": 0,
+    },
+    {
+        "id": "V008", "name": "Maersk Aurora", "imo": "IMO 9678901",
+        "flag": "Denmark", "capacity_teu": 18000, "current_load_teu": 15200,
+        "status": "AT_SEA", "lat": 5.0, "lon": 80.5, "speed_knots": 21,
+    },
+    {
+        "id": "V009", "name": "MSC Fortuna", "imo": "IMO 9789012",
+        "flag": "Panama", "capacity_teu": 15000, "current_load_teu": 11300,
+        "status": "ANCHORED", "lat": 1.20, "lon": 103.80, "speed_knots": 0,
+    },
+    {
+        "id": "V010", "name": "COSCO Galaxy", "imo": "IMO 9890123",
+        "flag": "China", "capacity_teu": 14000, "current_load_teu": 10500,
+        "status": "IN_PORT", "lat": 22.3, "lon": 114.2, "speed_knots": 0,
+    },
 ]
 
 YARDS = [
@@ -132,6 +264,27 @@ YARDS = [
     {
         "id": "YRD-002", "name": "LA Terminal Yard", "port_id": "P003",
         "total_slots": 150, "occupied_slots": 67,
+    },
+    # --- 5 additional yards ---
+    {
+        "id": "YRD-003", "name": "Singapore Pasir Panjang Yard", "port_id": "P002",
+        "total_slots": 250, "occupied_slots": 162,
+    },
+    {
+        "id": "YRD-004", "name": "Rotterdam Europoort Yard", "port_id": "P004",
+        "total_slots": 220, "occupied_slots": 154,
+    },
+    {
+        "id": "YRD-005", "name": "Dubai Jebel Ali Yard", "port_id": "P005",
+        "total_slots": 180, "occupied_slots": 72,
+    },
+    {
+        "id": "YRD-006", "name": "Mumbai Nhava Sheva Yard", "port_id": "P006",
+        "total_slots": 160, "occupied_slots": 144,
+    },
+    {
+        "id": "YRD-007", "name": "Hong Kong Kwai Tsing Yard", "port_id": "P008",
+        "total_slots": 190, "occupied_slots": 152,
     },
 ]
 
@@ -147,6 +300,19 @@ TRUCKS = [
     {
         "id": "TRK-003", "plate": "沪B-66666", "type": "FLATBED",
         "max_weight_kg": 25000, "status": "AVAILABLE",
+    },
+    # --- 3 additional trucks ---
+    {
+        "id": "TRK-004", "plate": "GA-3M8J7P2", "type": "CONTAINER_CHASSIS",
+        "max_weight_kg": 32000, "status": "AVAILABLE",
+    },
+    {
+        "id": "TRK-005", "plate": "NL-BX-94-TK", "type": "FLATBED",
+        "max_weight_kg": 26000, "status": "IN_USE",
+    },
+    {
+        "id": "TRK-006", "plate": "SG-XD5678A", "type": "CONTAINER_CHASSIS",
+        "max_weight_kg": 30000, "status": "MAINTENANCE",
     },
 ]
 
@@ -174,6 +340,60 @@ CONTAINERS = [
         "id": "OOLU5432109", "type": "40FT", "status": "EMPTY",
         "seal_number": None, "weight_kg": 3800, "max_weight_kg": 30000,
     },
+    # --- 12 additional containers ---
+    {
+        "id": "TRHU2345678", "type": "40FT", "status": "IN_TRANSIT",
+        "seal_number": "SL-005-2026", "weight_kg": 24500, "max_weight_kg": 30000,
+    },
+    {
+        "id": "CMAU3456780", "type": "20FT", "status": "IN_YARD",
+        "seal_number": "SL-006-2026", "weight_kg": 10800, "max_weight_kg": 22000,
+        "yard_position": "C-03-1",
+    },
+    {
+        "id": "EISU4567891", "type": "40FT_HC", "status": "LOADED",
+        "seal_number": "SL-007-2026", "weight_kg": 26200, "max_weight_kg": 32000,
+    },
+    {
+        "id": "MSCU5678902", "type": "40FT", "status": "EMPTY",
+        "seal_number": None, "weight_kg": 3800, "max_weight_kg": 30000,
+    },
+    {
+        "id": "KKFU6789013", "type": "REEFER", "status": "ON_VESSEL",
+        "seal_number": "SL-008-2026", "weight_kg": 19500, "max_weight_kg": 28000,
+        "temperature_celsius": -22.0,
+    },
+    {
+        "id": "APLU7890124", "type": "20FT", "status": "DAMAGED",
+        "seal_number": "SL-009-2026", "weight_kg": 8400, "max_weight_kg": 22000,
+    },
+    {
+        "id": "OOLU8901235", "type": "40FT", "status": "IN_YARD",
+        "seal_number": "SL-010-2026", "weight_kg": 21300, "max_weight_kg": 30000,
+        "yard_position": "D-08-3",
+    },
+    {
+        "id": "YMLU9012346", "type": "40FT_HC", "status": "IN_TRANSIT",
+        "seal_number": "SL-011-2026", "weight_kg": 27800, "max_weight_kg": 32000,
+    },
+    {
+        "id": "HPLU0123457", "type": "20FT", "status": "IN_YARD",
+        "seal_number": "SL-012-2026", "weight_kg": 14200, "max_weight_kg": 22000,
+        "yard_position": "A-11-2",
+    },
+    {
+        "id": "SEGU1234568", "type": "40FT", "status": "LOADED",
+        "seal_number": "SL-013-2026", "weight_kg": 23100, "max_weight_kg": 30000,
+    },
+    {
+        "id": "ZIMU2345679", "type": "REEFER", "status": "EMPTY",
+        "seal_number": None, "weight_kg": 4200, "max_weight_kg": 28000,
+        "temperature_celsius": -20.0,
+    },
+    {
+        "id": "HDMU3456780", "type": "40FT", "status": "ON_VESSEL",
+        "seal_number": "SL-014-2026", "weight_kg": 25600, "max_weight_kg": 30000,
+    },
 ]
 
 ROUTES = [
@@ -184,6 +404,24 @@ ROUTES = [
     {"from_port": "P002", "to_port": "P004", "distance_nm": 8400, "avg_days": 22},
     {"from_port": "P006", "to_port": "P004", "distance_nm": 6200, "avg_days": 16},
     {"from_port": "P006", "to_port": "P005", "distance_nm": 1200, "avg_days": 3},
+    # --- additional routes for new ports ---
+    {"from_port": "P007", "to_port": "P003", "distance_nm": 5100, "avg_days": 13},
+    {"from_port": "P007", "to_port": "P016", "distance_nm": 5200, "avg_days": 13},
+    {"from_port": "P008", "to_port": "P004", "distance_nm": 9800, "avg_days": 26},
+    {"from_port": "P008", "to_port": "P003", "distance_nm": 6400, "avg_days": 16},
+    {"from_port": "P009", "to_port": "P017", "distance_nm": 4500, "avg_days": 12},
+    {"from_port": "P010", "to_port": "P011", "distance_nm": 220, "avg_days": 1},
+    {"from_port": "P001", "to_port": "P012", "distance_nm": 1050, "avg_days": 3},
+    {"from_port": "P013", "to_port": "P004", "distance_nm": 6400, "avg_days": 17},
+    {"from_port": "P002", "to_port": "P014", "distance_nm": 3800, "avg_days": 10},
+    {"from_port": "P015", "to_port": "P008", "distance_nm": 1600, "avg_days": 4},
+    {"from_port": "P020", "to_port": "P004", "distance_nm": 5800, "avg_days": 15},
+    {"from_port": "P019", "to_port": "P018", "distance_nm": 4200, "avg_days": 11},
+    {"from_port": "P001", "to_port": "P007", "distance_nm": 520, "avg_days": 2},
+    {"from_port": "P022", "to_port": "P003", "distance_nm": 6000, "avg_days": 15},
+    {"from_port": "P023", "to_port": "P009", "distance_nm": 8500, "avg_days": 22},
+    {"from_port": "P024", "to_port": "P025", "distance_nm": 5500, "avg_days": 14},
+    {"from_port": "P021", "to_port": "P026", "distance_nm": 5200, "avg_days": 13},
 ]
 
 _now = datetime.now(timezone.utc)
@@ -254,6 +492,123 @@ SHIPMENTS = [
         "current_location": "Dubai", "eta": None,
         "created_at": (_now - timedelta(days=20)).isoformat(),
         "updated_at": (_now - timedelta(days=1)).isoformat(),
+    },
+    # --- 8 additional shipments ---
+    {
+        "id": "SHP-2026-009", "status": "REQUEST_SUBMITTED", "priority": "NORMAL",
+        "customer_id": "USR-001", "container_id": None,
+        "origin_port": "P007", "dest_port": "P016", "vessel_id": None,
+        "current_location": "Pending", "eta": None,
+        "created_at": (_now - timedelta(hours=6)).isoformat(),
+        "updated_at": (_now - timedelta(hours=6)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-010", "status": "APPROVED", "priority": "HIGH",
+        "customer_id": "USR-002", "container_id": None,
+        "origin_port": "P008", "dest_port": "P004", "vessel_id": None,
+        "current_location": "Port of Hong Kong", "eta": (_now + timedelta(days=28)).isoformat(),
+        "created_at": (_now - timedelta(days=2)).isoformat(),
+        "updated_at": (_now - timedelta(hours=4)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-011", "status": "PICKUP_EN_ROUTE", "priority": "NORMAL",
+        "customer_id": "USR-001", "container_id": "EISU4567891",
+        "origin_port": "P002", "dest_port": "P009", "vessel_id": None,
+        "driver_id": "USR-004",
+        "current_location": "En route to shipper", "eta": (_now + timedelta(days=24)).isoformat(),
+        "created_at": (_now - timedelta(days=3)).isoformat(),
+        "updated_at": (_now - timedelta(hours=2)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-012", "status": "AT_ORIGIN_PORT", "priority": "CRITICAL",
+        "customer_id": "USR-002", "container_id": "SEGU1234568",
+        "origin_port": "P001", "dest_port": "P017", "vessel_id": None,
+        "current_location": "Port of Shanghai", "eta": (_now + timedelta(days=18)).isoformat(),
+        "created_at": (_now - timedelta(days=5)).isoformat(),
+        "updated_at": (_now - timedelta(hours=1)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-013", "status": "CUSTOMS_CLEARANCE", "priority": "HIGH",
+        "customer_id": "USR-001", "container_id": "CMAU3456780",
+        "origin_port": "P006", "dest_port": "P010", "vessel_id": None,
+        "current_location": "Port of Mumbai - Customs", "eta": (_now + timedelta(days=20)).isoformat(),
+        "created_at": (_now - timedelta(days=6)).isoformat(),
+        "updated_at": (_now - timedelta(hours=5)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-014", "status": "IN_YARD", "priority": "NORMAL",
+        "customer_id": "USR-002", "container_id": "OOLU8901235",
+        "origin_port": "P004", "dest_port": "P019", "vessel_id": None,
+        "current_location": "Rotterdam Europoort Yard", "eta": (_now + timedelta(days=14)).isoformat(),
+        "created_at": (_now - timedelta(days=7)).isoformat(),
+        "updated_at": (_now - timedelta(hours=8)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-015", "status": "LOADED_ON_VESSEL", "priority": "HIGH",
+        "customer_id": "USR-001", "container_id": "HDMU3456780",
+        "origin_port": "P002", "dest_port": "P020", "vessel_id": "V009",
+        "current_location": "Port of Singapore", "eta": (_now + timedelta(days=16)).isoformat(),
+        "created_at": (_now - timedelta(days=8)).isoformat(),
+        "updated_at": (_now - timedelta(hours=3)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-016", "status": "IN_TRANSIT_SEA", "priority": "CRITICAL",
+        "customer_id": "USR-002", "container_id": "KKFU6789013",
+        "origin_port": "P008", "dest_port": "P003", "vessel_id": "V008",
+        "current_location": "Indian Ocean", "eta": (_now + timedelta(days=10)).isoformat(),
+        "created_at": (_now - timedelta(days=12)).isoformat(),
+        "updated_at": (_now - timedelta(hours=2)).isoformat(),
+    },
+]
+
+NOTIFICATIONS = [
+    {
+        "id": "NTF-001", "message": "Your shipment SHP-2026-001 is now in transit across the Pacific.",
+        "type": "INFO", "shipment_id": "SHP-2026-001", "user_id": "USR-001", "read": False,
+    },
+    {
+        "id": "NTF-002", "message": "Customs clearance delay for SHP-2026-003. Estimated 2 hour hold.",
+        "type": "WARNING", "shipment_id": "SHP-2026-003", "user_id": "USR-002", "read": False,
+    },
+    {
+        "id": "NTF-003", "message": "Shipment SHP-2026-008 has been delivered successfully.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-008", "user_id": "USR-002", "read": True,
+    },
+    {
+        "id": "NTF-004", "message": "Driver assigned for pickup of SHP-2026-005. ETA 45 minutes.",
+        "type": "INFO", "shipment_id": "SHP-2026-005", "user_id": "USR-001", "read": False,
+    },
+    {
+        "id": "NTF-005", "message": "Port congestion alert: Shanghai port experiencing HIGH congestion.",
+        "type": "WARNING", "shipment_id": "SHP-2026-002", "user_id": "USR-001", "read": False,
+    },
+    {
+        "id": "NTF-006", "message": "Shipment SHP-2026-004 cleared customs at Port of Mumbai.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-004", "user_id": "USR-002", "read": True,
+    },
+    {
+        "id": "NTF-007", "message": "Your shipment SHP-2026-012 has arrived at the origin port.",
+        "type": "INFO", "shipment_id": "SHP-2026-012", "user_id": "USR-002", "read": False,
+    },
+    {
+        "id": "NTF-008", "message": "Vessel delay: Maersk Aurora experiencing weather delays. SHP-2026-016 ETA updated.",
+        "type": "WARNING", "shipment_id": "SHP-2026-016", "user_id": "USR-002", "read": False,
+    },
+    {
+        "id": "NTF-009", "message": "Shipment SHP-2026-015 loaded onto MSC Fortuna at Singapore.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-015", "user_id": "USR-001", "read": False,
+    },
+    {
+        "id": "NTF-010", "message": "New shipment request SHP-2026-009 submitted for review.",
+        "type": "INFO", "shipment_id": "SHP-2026-009", "user_id": "USR-001", "read": False,
+    },
+    {
+        "id": "NTF-011", "message": "Shipment SHP-2026-010 approved. Awaiting driver assignment.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-010", "user_id": "USR-002", "read": False,
+    },
+    {
+        "id": "NTF-012", "message": "Container APLU7890124 flagged as DAMAGED during inspection.",
+        "type": "WARNING", "shipment_id": None, "user_id": "USR-003", "read": False,
     },
 ]
 
@@ -545,8 +900,10 @@ async def run_seed() -> None:
     # ------------------------------------------------------------------
     print("🔗 Linking customers → shipments (REQUESTED) …")
     customer_shipments = {
-        "USR-001": ["SHP-2026-001", "SHP-2026-002", "SHP-2026-005", "SHP-2026-007"],
-        "USR-002": ["SHP-2026-003", "SHP-2026-004", "SHP-2026-006", "SHP-2026-008"],
+        "USR-001": ["SHP-2026-001", "SHP-2026-002", "SHP-2026-005", "SHP-2026-007",
+                     "SHP-2026-009", "SHP-2026-011", "SHP-2026-013", "SHP-2026-015"],
+        "USR-002": ["SHP-2026-003", "SHP-2026-004", "SHP-2026-006", "SHP-2026-008",
+                     "SHP-2026-010", "SHP-2026-012", "SHP-2026-014", "SHP-2026-016"],
     }
     for uid, sids in customer_shipments.items():
         for sid in sids:
@@ -561,8 +918,10 @@ async def run_seed() -> None:
     # ------------------------------------------------------------------
     print("🔗 Linking drivers → shipments (ASSIGNED_PICKUP) …")
     driver_shipments = {
-        "USR-004": ["SHP-2026-001", "SHP-2026-002", "SHP-2026-003", "SHP-2026-006"],
-        "USR-005": ["SHP-2026-004", "SHP-2026-005", "SHP-2026-007", "SHP-2026-008"],
+        "USR-004": ["SHP-2026-001", "SHP-2026-002", "SHP-2026-003", "SHP-2026-006",
+                     "SHP-2026-011", "SHP-2026-013"],
+        "USR-005": ["SHP-2026-004", "SHP-2026-005", "SHP-2026-007", "SHP-2026-008",
+                     "SHP-2026-012", "SHP-2026-015"],
     }
     for uid, sids in driver_shipments.items():
         for sid in sids:
@@ -581,7 +940,7 @@ async def run_seed() -> None:
     STATUS_ORDER = [
         "REQUEST_SUBMITTED", "UNDER_REVIEW", "APPROVED", "DRIVER_ASSIGNED",
         "PICKUP_EN_ROUTE", "GOODS_RELEASED", "IN_TRANSIT_TO_PORT",
-        "PORT_ENTRY", "CUSTOMS_CLEARANCE", "IN_YARD",
+        "AT_ORIGIN_PORT", "PORT_ENTRY", "CUSTOMS_CLEARANCE", "IN_YARD",
         "LOADED_ON_VESSEL", "IN_TRANSIT_SEA", "ARRIVED_DEST_PORT",
         "LAST_MILE_ASSIGNED", "DELIVERED",
     ]
@@ -595,6 +954,14 @@ async def run_seed() -> None:
         "SHP-2026-006": "UNDER_REVIEW",
         "SHP-2026-007": "LAST_MILE_ASSIGNED",
         "SHP-2026-008": "DELIVERED",
+        "SHP-2026-009": "REQUEST_SUBMITTED",
+        "SHP-2026-010": "APPROVED",
+        "SHP-2026-011": "PICKUP_EN_ROUTE",
+        "SHP-2026-012": "AT_ORIGIN_PORT",
+        "SHP-2026-013": "CUSTOMS_CLEARANCE",
+        "SHP-2026-014": "IN_YARD",
+        "SHP-2026-015": "LOADED_ON_VESSEL",
+        "SHP-2026-016": "IN_TRANSIT_SEA",
     }
 
     for ship_id, current_status in shipment_statuses.items():
@@ -676,6 +1043,9 @@ async def run_seed() -> None:
     container_yard_map = [
         ("MSKU7654321", "YRD-001"),  # Shanghai East Yard
         ("TCNU3456789", "YRD-001"),  # Shanghai East Yard
+        ("CMAU3456780", "YRD-003"),  # Singapore Pasir Panjang Yard
+        ("OOLU8901235", "YRD-004"),  # Rotterdam Europoort Yard
+        ("HPLU0123457", "YRD-006"),  # Mumbai Nhava Sheva Yard
     ]
     for ctr_id, yard_id in container_yard_map:
         await graph_service.run(
@@ -694,6 +1064,12 @@ async def run_seed() -> None:
     container_port_map = [
         ("MSKU7654321", "P001"),
         ("TCNU3456789", "P001"),
+        ("CMAU3456780", "P002"),
+        ("OOLU8901235", "P004"),
+        ("HPLU0123457", "P006"),
+        ("APLU7890124", "P003"),   # Damaged container at LA
+        ("MSCU5678902", "P005"),   # Empty container at Dubai
+        ("ZIMU2345679", "P008"),   # Empty reefer at Hong Kong
     ]
     for ctr_id, port_id in container_port_map:
         await graph_service.run(
@@ -709,26 +1085,42 @@ async def run_seed() -> None:
     # 16. Relationships: Container LOADED_ON Vessel
     # ------------------------------------------------------------------
     print("🔗 Linking containers → vessels …")
-    await graph_service.run(
-        """
-        MATCH (c:Container {id: $ctr_id}), (v:Vessel {id: $vessel_id})
-        CREATE (c)-[:LOADED_ON]->(v)
-        """,
-        {"ctr_id": "CSLU1234567", "vessel_id": "V001"},
-    )
+    container_vessel_map = [
+        ("CSLU1234567", "V001"),
+        ("KKFU6789013", "V008"),   # Reefer on Maersk Aurora
+        ("HDMU3456780", "V009"),   # On MSC Fortuna
+        ("TRHU2345678", "V006"),   # In transit on Atlantic Pioneer
+        ("YMLU9012346", "V008"),   # In transit on Maersk Aurora
+    ]
+    for ctr_id, vessel_id in container_vessel_map:
+        await graph_service.run(
+            """
+            MATCH (c:Container {id: $ctr_id}), (v:Vessel {id: $vessel_id})
+            CREATE (c)-[:LOADED_ON]->(v)
+            """,
+            {"ctr_id": ctr_id, "vessel_id": vessel_id},
+        )
     print("   Done.\n")
 
     # ------------------------------------------------------------------
     # 17. Relationships: Vessel DOCKED_AT Port (IN_PORT vessels)
     # ------------------------------------------------------------------
     print("🔗 Linking vessels → ports …")
-    await graph_service.run(
-        """
-        MATCH (v:Vessel {id: $vessel_id}), (p:Port {id: $port_id})
-        CREATE (v)-[:DOCKED_AT]->(p)
-        """,
-        {"vessel_id": "V002", "port_id": "P001"},
-    )
+    vessel_port_map = [
+        ("V002", "P001"),   # Atlantic Runner docked at Shanghai
+        ("V005", "P001"),   # Pacific Harmony docked at Shanghai
+        ("V007", "P003"),   # Nordic Star docked at LA
+        ("V009", "P002"),   # MSC Fortuna anchored at Singapore
+        ("V010", "P008"),   # COSCO Galaxy docked at Hong Kong
+    ]
+    for vessel_id, port_id in vessel_port_map:
+        await graph_service.run(
+            """
+            MATCH (v:Vessel {id: $vessel_id}), (p:Port {id: $port_id})
+            CREATE (v)-[:DOCKED_AT]->(p)
+            """,
+            {"vessel_id": vessel_id, "port_id": port_id},
+        )
     print("   Done.\n")
 
     # ------------------------------------------------------------------
@@ -744,6 +1136,47 @@ async def run_seed() -> None:
             {"yard_id": y["id"], "port_id": y["port_id"]},
         )
     print("   Done.\n")
+
+    # ------------------------------------------------------------------
+    # 19. Notifications
+    # ------------------------------------------------------------------
+    print("🔔 Creating notifications …")
+    for ntf in NOTIFICATIONS:
+        params = {
+            "id": ntf["id"],
+            "message": ntf["message"],
+            "type": ntf["type"],
+            "read": ntf["read"],
+            "user_id": ntf["user_id"],
+        }
+        if ntf.get("shipment_id"):
+            params["shipment_id"] = ntf["shipment_id"]
+            await graph_service.run(
+                """
+                CREATE (n:Notification {
+                    id: $id, message: $message, type: $type,
+                    shipment_id: $shipment_id, created_at: datetime(), read: $read
+                })
+                WITH n
+                MATCH (u:User {id: $user_id})
+                CREATE (u)-[:HAS_NOTIFICATION]->(n)
+                """,
+                params,
+            )
+        else:
+            await graph_service.run(
+                """
+                CREATE (n:Notification {
+                    id: $id, message: $message, type: $type,
+                    created_at: datetime(), read: $read
+                })
+                WITH n
+                MATCH (u:User {id: $user_id})
+                CREATE (u)-[:HAS_NOTIFICATION]->(n)
+                """,
+                params,
+            )
+    print(f"   Created {len(NOTIFICATIONS)} notifications.\n")
 
     # ------------------------------------------------------------------
     # Summary
