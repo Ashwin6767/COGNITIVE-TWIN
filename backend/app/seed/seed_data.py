@@ -18,6 +18,10 @@ COMPANIES = [
     {"id": "COM-002", "name": "Pacific Logistics Co.", "type": "LOGISTICS_PROVIDER", "country": "Singapore"},
     {"id": "COM-003", "name": "FastFreight America", "type": "CARRIER", "country": "United States"},
     {"id": "COM-004", "name": "ACME Corp", "type": "SHIPPER", "country": "United States"},
+    {"id": "COM-005", "name": "EuroTrade GmbH", "type": "SHIPPER", "country": "Germany"},
+    {"id": "COM-006", "name": "Gulf Star Shipping", "type": "CARRIER", "country": "UAE"},
+    {"id": "COM-007", "name": "IndoFreight Pvt Ltd", "type": "LOGISTICS_PROVIDER", "country": "India"},
+    {"id": "COM-008", "name": "Santos Export Co.", "type": "SHIPPER", "country": "Brazil"},
 ]
 
 USERS = [
@@ -64,6 +68,52 @@ USERS = [
     },
     {
         "id": "USR-010", "email": "admin@cognitivetwin.io", "name": "System Admin",
+        "role": "ADMIN", "company_id": None, "password": "admin123",
+    },
+    # --- Additional users for comprehensive demo ---
+    {
+        "id": "USR-011", "email": "hans@eurotrade.de", "name": "Hans Mueller",
+        "role": "CUSTOMER", "company_id": "COM-005", "password": "demo123",
+    },
+    {
+        "id": "USR-012", "email": "ahmed@gulfstar.ae", "name": "Ahmed Al-Rashid",
+        "role": "DRIVER", "company_id": "COM-006", "password": "demo123",
+        "license_type": "CDL_A", "license_number": "DL-AE-001",
+    },
+    {
+        "id": "USR-013", "email": "priya@indofreight.in", "name": "Priya Sharma",
+        "role": "LOGISTICS_MANAGER", "company_id": "COM-007", "password": "demo123",
+    },
+    {
+        "id": "USR-014", "email": "carlos@santos-export.br", "name": "Carlos Silva",
+        "role": "CUSTOMER", "company_id": "COM-008", "password": "demo123",
+    },
+    {
+        "id": "USR-015", "email": "kenji@tokyo-port.jp", "name": "Kenji Tanaka",
+        "role": "PORT_OFFICER", "company_id": None, "password": "demo123",
+        "assigned_port_id": "P012",
+    },
+    {
+        "id": "USR-016", "email": "maria@customs.nl", "name": "Maria van Dijk",
+        "role": "CUSTOMS_OFFICER", "company_id": None, "password": "demo123",
+    },
+    {
+        "id": "USR-017", "email": "raj@mumbai-port.in", "name": "Raj Patel",
+        "role": "YARD_MANAGER", "company_id": None, "password": "demo123",
+        "assigned_port_id": "P006",
+    },
+    {
+        "id": "USR-018", "email": "emily@fastfreight.us", "name": "Emily Davis",
+        "role": "DRIVER", "company_id": "COM-003", "password": "demo123",
+        "license_type": "CDL_B", "license_number": "DL-US-002",
+    },
+    {
+        "id": "USR-019", "email": "miguel@la-port.us", "name": "Miguel Torres",
+        "role": "PORT_OFFICER", "company_id": None, "password": "demo123",
+        "assigned_port_id": "P016",
+    },
+    {
+        "id": "USR-020", "email": "superadmin@cognitivetwin.io", "name": "Operations Admin",
         "role": "ADMIN", "company_id": None, "password": "admin123",
     },
 ]
@@ -313,6 +363,14 @@ TRUCKS = [
     {
         "id": "TRK-006", "plate": "SG-XD5678A", "type": "CONTAINER_CHASSIS",
         "max_weight_kg": 30000, "status": "MAINTENANCE",
+    },
+    {
+        "id": "TRK-007", "plate": "AE-DXB-9911", "type": "CONTAINER_CHASSIS",
+        "max_weight_kg": 30000, "status": "IN_USE",
+    },
+    {
+        "id": "TRK-008", "plate": "CA-4R7M2K9", "type": "FLATBED",
+        "max_weight_kg": 27000, "status": "AVAILABLE",
     },
 ]
 
@@ -566,6 +624,141 @@ SHIPMENTS = [
         "created_at": (_now - timedelta(days=12)).isoformat(),
         "updated_at": (_now - timedelta(hours=2)).isoformat(),
     },
+    # --- NEW: Shipments covering every missing status ---
+    {
+        "id": "SHP-2026-017", "status": "AWAITING_CUSTOMER_DETAILS", "priority": "STANDARD",
+        "customer_id": "USR-011", "container_id": None,
+        "origin_port": "P009", "dest_port": "P017", "vessel_id": None,
+        "current_location": "Pending customer details", "eta": (_now + timedelta(days=25)).isoformat(),
+        "created_at": (_now - timedelta(days=2)).isoformat(),
+        "updated_at": (_now - timedelta(hours=8)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-018", "status": "REJECTED", "priority": "NORMAL",
+        "customer_id": "USR-014", "container_id": None,
+        "origin_port": "P020", "dest_port": "P004", "vessel_id": None,
+        "current_location": "Rejected", "eta": None,
+        "created_at": (_now - timedelta(days=3)).isoformat(),
+        "updated_at": (_now - timedelta(days=2)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-019", "status": "CANCELLED", "priority": "HIGH",
+        "customer_id": "USR-002", "container_id": None,
+        "origin_port": "P001", "dest_port": "P016", "vessel_id": None,
+        "current_location": "Cancelled", "eta": None,
+        "created_at": (_now - timedelta(days=5)).isoformat(),
+        "updated_at": (_now - timedelta(days=3)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-020", "status": "IN_TRANSIT_TO_PORT", "priority": "EXPRESS",
+        "customer_id": "USR-001", "container_id": "TRHU2345678",
+        "origin_port": "P001", "dest_port": "P003", "vessel_id": None,
+        "driver_id": "USR-004",
+        "pickup_address": "500 Pudong Ave, Pudong, Shanghai",
+        "pickup_lat": 31.2350, "pickup_lng": 121.5440,
+        "trucks_required": 1, "cargo_weight_kg": 18000,
+        "current_location": "En route to Port of Shanghai", "eta": (_now + timedelta(days=16)).isoformat(),
+        "created_at": (_now - timedelta(days=4)).isoformat(),
+        "updated_at": (_now - timedelta(hours=1)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-021", "status": "PORT_ENTRY", "priority": "STANDARD",
+        "customer_id": "USR-011", "container_id": "YMLU9012346",
+        "origin_port": "P009", "dest_port": "P003", "vessel_id": None,
+        "driver_id": "USR-012",
+        "pickup_address": "Hafencity Warehouse, Hamburg",
+        "pickup_lat": 53.5410, "pickup_lng": 9.9937,
+        "trucks_required": 2, "cargo_weight_kg": 28000,
+        "current_location": "Port of Hamburg - Gate", "eta": (_now + timedelta(days=14)).isoformat(),
+        "created_at": (_now - timedelta(days=6)).isoformat(),
+        "updated_at": (_now - timedelta(hours=3)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-022", "status": "ARRIVED_DEST_PORT", "priority": "CRITICAL",
+        "customer_id": "USR-002", "container_id": "HLXU9876543",
+        "origin_port": "P006", "dest_port": "P003", "vessel_id": None,
+        "current_location": "Port of Los Angeles", "eta": (_now + timedelta(days=2)).isoformat(),
+        "created_at": (_now - timedelta(days=18)).isoformat(),
+        "updated_at": (_now - timedelta(hours=4)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-023", "status": "DELIVERED", "priority": "EXPRESS",
+        "customer_id": "USR-011", "container_id": None,
+        "origin_port": "P009", "dest_port": "P017", "vessel_id": None,
+        "driver_id": "USR-018",
+        "current_location": "Savannah, GA", "eta": None,
+        "created_at": (_now - timedelta(days=25)).isoformat(),
+        "updated_at": (_now - timedelta(days=2)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-024", "status": "AWAITING_CUSTOMER_DETAILS", "priority": "HIGH",
+        "customer_id": "USR-014", "container_id": None,
+        "origin_port": "P020", "dest_port": "P018", "vessel_id": None,
+        "current_location": "Pending customer details", "eta": (_now + timedelta(days=18)).isoformat(),
+        "created_at": (_now - timedelta(days=1)).isoformat(),
+        "updated_at": (_now - timedelta(hours=5)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-025", "status": "DRIVER_ASSIGNED", "priority": "CRITICAL",
+        "customer_id": "USR-011", "container_id": None,
+        "origin_port": "P004", "dest_port": "P019", "vessel_id": None,
+        "driver_id": "USR-012",
+        "pickup_address": "Europoort Industrial Zone, Rotterdam",
+        "pickup_lat": 51.9330, "pickup_lng": 4.1260,
+        "trucks_required": 3, "cargo_weight_kg": 35000,
+        "current_location": "Rotterdam", "eta": (_now + timedelta(days=15)).isoformat(),
+        "created_at": (_now - timedelta(days=3)).isoformat(),
+        "updated_at": (_now - timedelta(hours=2)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-026", "status": "PICKUP_EN_ROUTE", "priority": "NORMAL",
+        "customer_id": "USR-014", "container_id": None,
+        "origin_port": "P020", "dest_port": "P004", "vessel_id": None,
+        "driver_id": "USR-018",
+        "pickup_address": "Rua do Porto 450, Santos, Brazil",
+        "pickup_lat": -23.9540, "pickup_lng": -46.3330,
+        "trucks_required": 1, "cargo_weight_kg": 15000,
+        "current_location": "En route to Santos warehouse", "eta": (_now + timedelta(days=17)).isoformat(),
+        "created_at": (_now - timedelta(days=2)).isoformat(),
+        "updated_at": (_now - timedelta(hours=1)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-027", "status": "GOODS_RELEASED", "priority": "EXPRESS",
+        "customer_id": "USR-001", "container_id": None,
+        "origin_port": "P001", "dest_port": "P012", "vessel_id": None,
+        "driver_id": "USR-004",
+        "pickup_address": "1000 Zhangyang Rd, Pudong, Shanghai",
+        "pickup_lat": 31.2300, "pickup_lng": 121.5230,
+        "trucks_required": 1, "cargo_weight_kg": 9500,
+        "current_location": "Goods collected, heading to port", "eta": (_now + timedelta(days=5)).isoformat(),
+        "created_at": (_now - timedelta(days=3)).isoformat(),
+        "updated_at": (_now - timedelta(minutes=45)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-028", "status": "LAST_MILE_ASSIGNED", "priority": "STANDARD",
+        "customer_id": "USR-002", "container_id": None,
+        "origin_port": "P002", "dest_port": "P004", "vessel_id": None,
+        "driver_id": "USR-012",
+        "current_location": "Rotterdam warehouse district", "eta": (_now + timedelta(hours=12)).isoformat(),
+        "created_at": (_now - timedelta(days=22)).isoformat(),
+        "updated_at": (_now - timedelta(hours=3)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-029", "status": "CANCELLED", "priority": "NORMAL",
+        "customer_id": "USR-011", "container_id": None,
+        "origin_port": "P009", "dest_port": "P022", "vessel_id": None,
+        "current_location": "Cancelled by customer", "eta": None,
+        "created_at": (_now - timedelta(days=7)).isoformat(),
+        "updated_at": (_now - timedelta(days=5)).isoformat(),
+    },
+    {
+        "id": "SHP-2026-030", "status": "REQUEST_SUBMITTED", "priority": "HIGH",
+        "customer_id": "USR-014", "container_id": None,
+        "origin_port": "P020", "dest_port": "P025", "vessel_id": None,
+        "current_location": "Pending", "eta": None,
+        "created_at": (_now - timedelta(hours=2)).isoformat(),
+        "updated_at": (_now - timedelta(hours=2)).isoformat(),
+    },
 ]
 
 NOTIFICATIONS = [
@@ -616,6 +809,105 @@ NOTIFICATIONS = [
     {
         "id": "NTF-012", "message": "Container APLU7890124 flagged as DAMAGED during inspection.",
         "type": "WARNING", "shipment_id": None, "user_id": "USR-003", "read": False,
+    },
+    # --- Notifications for drivers ---
+    {
+        "id": "NTF-013", "message": "New pickup assignment: SHP-2026-020. Head to 500 Pudong Ave, Shanghai.",
+        "type": "INFO", "shipment_id": "SHP-2026-020", "user_id": "USR-004", "read": False,
+    },
+    {
+        "id": "NTF-014", "message": "Pickup confirmed for SHP-2026-005. Customer is expecting you.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-005", "user_id": "USR-004", "read": True,
+    },
+    {
+        "id": "NTF-015", "message": "Delivery assignment: SHP-2026-007. Route to 1234 Main St, Los Angeles.",
+        "type": "INFO", "shipment_id": "SHP-2026-007", "user_id": "USR-005", "read": False,
+    },
+    {
+        "id": "NTF-016", "message": "New pickup for SHP-2026-025. Europoort Industrial Zone, Rotterdam.",
+        "type": "INFO", "shipment_id": "SHP-2026-025", "user_id": "USR-012", "read": False,
+    },
+    {
+        "id": "NTF-017", "message": "Delivery completed! SHP-2026-023 delivered to Savannah, GA.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-023", "user_id": "USR-018", "read": True,
+    },
+    # --- Notifications for port officers ---
+    {
+        "id": "NTF-018", "message": "Vessel Pacific Star approaching. Prepare berth for docking.",
+        "type": "WARNING", "shipment_id": None, "user_id": "USR-006", "read": False,
+    },
+    {
+        "id": "NTF-019", "message": "Container SEGU1234568 cleared for loading onto vessel at berth 4.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-012", "user_id": "USR-006", "read": False,
+    },
+    {
+        "id": "NTF-020", "message": "SHP-2026-022 arrived at Port of LA. Awaiting unloading assignment.",
+        "type": "INFO", "shipment_id": "SHP-2026-022", "user_id": "USR-007", "read": False,
+    },
+    {
+        "id": "NTF-021", "message": "Berth 7 congestion alert: 3 vessels waiting. Delays expected.",
+        "type": "WARNING", "shipment_id": None, "user_id": "USR-007", "read": False,
+    },
+    # --- Notifications for customs officers ---
+    {
+        "id": "NTF-022", "message": "SHP-2026-003 customs documents ready for review. Priority: STANDARD.",
+        "type": "INFO", "shipment_id": "SHP-2026-003", "user_id": "USR-008", "read": False,
+    },
+    {
+        "id": "NTF-023", "message": "SHP-2026-013 flagged for additional inspection. Hazmat documentation incomplete.",
+        "type": "WARNING", "shipment_id": "SHP-2026-013", "user_id": "USR-008", "read": False,
+    },
+    {
+        "id": "NTF-024", "message": "Customs clearance approved for SHP-2026-002. Released to yard.",
+        "type": "SUCCESS", "shipment_id": "SHP-2026-002", "user_id": "USR-016", "read": True,
+    },
+    # --- Notifications for yard managers ---
+    {
+        "id": "NTF-025", "message": "Shanghai East Yard at 78% capacity. Plan for overflow allocation.",
+        "type": "WARNING", "shipment_id": None, "user_id": "USR-009", "read": False,
+    },
+    {
+        "id": "NTF-026", "message": "Container MSKU7654321 ready for vessel loading at slot A-05-2.",
+        "type": "INFO", "shipment_id": "SHP-2026-002", "user_id": "USR-009", "read": False,
+    },
+    {
+        "id": "NTF-027", "message": "Mumbai yard reaching max capacity (90%). Redirect incoming containers.",
+        "type": "WARNING", "shipment_id": None, "user_id": "USR-017", "read": False,
+    },
+    # --- Notifications for logistics managers ---
+    {
+        "id": "NTF-028", "message": "New shipment request SHP-2026-030 awaiting your review.",
+        "type": "INFO", "shipment_id": "SHP-2026-030", "user_id": "USR-003", "read": False,
+    },
+    {
+        "id": "NTF-029", "message": "SHP-2026-017 waiting for customer pickup details. Follow up with Hans Mueller.",
+        "type": "WARNING", "shipment_id": "SHP-2026-017", "user_id": "USR-003", "read": False,
+    },
+    {
+        "id": "NTF-030", "message": "Weekly report: 5 shipments delivered, 3 in transit, 2 delayed.",
+        "type": "INFO", "shipment_id": None, "user_id": "USR-013", "read": False,
+    },
+    # --- Notifications for admins ---
+    {
+        "id": "NTF-031", "message": "System health: All services operational. 30 active shipments.",
+        "type": "SUCCESS", "shipment_id": None, "user_id": "USR-010", "read": False,
+    },
+    {
+        "id": "NTF-032", "message": "New user registered: Carlos Silva (Santos Export Co.)",
+        "type": "INFO", "shipment_id": None, "user_id": "USR-010", "read": True,
+    },
+    # --- More customer notifications ---
+    {
+        "id": "NTF-033", "message": "Your shipment SHP-2026-017 is approved! Please provide pickup details.",
+        "type": "INFO", "shipment_id": "SHP-2026-017", "user_id": "USR-011", "read": False,
+    },
+    {
+        "id": "NTF-034", "message": "Shipment SHP-2026-018 was rejected. Reason: Incomplete documentation.",
+        "type": "WARNING", "shipment_id": "SHP-2026-018", "user_id": "USR-014", "read": False,
+    },
+    {
+        "id": "NTF-035", "message": "SHP-2026-024 approved! Please submit pickup address and cargo details.",
+        "type": "INFO", "shipment_id": "SHP-2026-024", "user_id": "USR-014", "read": False,
     },
 ]
 
@@ -919,9 +1211,13 @@ async def run_seed() -> None:
     print("🔗 Linking customers → shipments (REQUESTED) …")
     customer_shipments = {
         "USR-001": ["SHP-2026-001", "SHP-2026-002", "SHP-2026-005", "SHP-2026-007",
-                     "SHP-2026-009", "SHP-2026-011", "SHP-2026-013", "SHP-2026-015"],
+                     "SHP-2026-009", "SHP-2026-011", "SHP-2026-013", "SHP-2026-015",
+                     "SHP-2026-020", "SHP-2026-027"],
         "USR-002": ["SHP-2026-003", "SHP-2026-004", "SHP-2026-006", "SHP-2026-008",
-                     "SHP-2026-010", "SHP-2026-012", "SHP-2026-014", "SHP-2026-016"],
+                     "SHP-2026-010", "SHP-2026-012", "SHP-2026-014", "SHP-2026-016",
+                     "SHP-2026-019", "SHP-2026-022", "SHP-2026-028"],
+        "USR-011": ["SHP-2026-017", "SHP-2026-023", "SHP-2026-025", "SHP-2026-029"],
+        "USR-014": ["SHP-2026-018", "SHP-2026-024", "SHP-2026-026", "SHP-2026-030"],
     }
     for uid, sids in customer_shipments.items():
         for sid in sids:
@@ -937,9 +1233,11 @@ async def run_seed() -> None:
     print("🔗 Linking drivers → shipments (ASSIGNED_PICKUP) …")
     driver_shipments = {
         "USR-004": ["SHP-2026-001", "SHP-2026-002", "SHP-2026-003", "SHP-2026-006",
-                     "SHP-2026-011", "SHP-2026-013"],
+                     "SHP-2026-011", "SHP-2026-013", "SHP-2026-020", "SHP-2026-027"],
         "USR-005": ["SHP-2026-004", "SHP-2026-005", "SHP-2026-007", "SHP-2026-008",
                      "SHP-2026-012", "SHP-2026-015"],
+        "USR-012": ["SHP-2026-021", "SHP-2026-025", "SHP-2026-028"],
+        "USR-018": ["SHP-2026-023", "SHP-2026-026"],
     }
     for uid, sids in driver_shipments.items():
         for sid in sids:
@@ -956,7 +1254,8 @@ async def run_seed() -> None:
     import uuid as _uuid
 
     STATUS_ORDER = [
-        "REQUEST_SUBMITTED", "UNDER_REVIEW", "APPROVED", "DRIVER_ASSIGNED",
+        "REQUEST_SUBMITTED", "UNDER_REVIEW", "APPROVED",
+        "AWAITING_CUSTOMER_DETAILS", "DRIVER_ASSIGNED",
         "PICKUP_EN_ROUTE", "GOODS_RELEASED", "IN_TRANSIT_TO_PORT",
         "AT_ORIGIN_PORT", "PORT_ENTRY", "CUSTOMS_CLEARANCE", "IN_YARD",
         "LOADED_ON_VESSEL", "IN_TRANSIT_SEA", "ARRIVED_DEST_PORT",
@@ -980,6 +1279,20 @@ async def run_seed() -> None:
         "SHP-2026-014": "IN_YARD",
         "SHP-2026-015": "LOADED_ON_VESSEL",
         "SHP-2026-016": "IN_TRANSIT_SEA",
+        "SHP-2026-017": "AWAITING_CUSTOMER_DETAILS",
+        "SHP-2026-018": "REJECTED",
+        "SHP-2026-019": "CANCELLED",
+        "SHP-2026-020": "IN_TRANSIT_TO_PORT",
+        "SHP-2026-021": "PORT_ENTRY",
+        "SHP-2026-022": "ARRIVED_DEST_PORT",
+        "SHP-2026-023": "DELIVERED",
+        "SHP-2026-024": "AWAITING_CUSTOMER_DETAILS",
+        "SHP-2026-025": "DRIVER_ASSIGNED",
+        "SHP-2026-026": "PICKUP_EN_ROUTE",
+        "SHP-2026-027": "GOODS_RELEASED",
+        "SHP-2026-028": "LAST_MILE_ASSIGNED",
+        "SHP-2026-029": "CANCELLED",
+        "SHP-2026-030": "REQUEST_SUBMITTED",
     }
 
     for ship_id, current_status in shipment_statuses.items():
@@ -1043,6 +1356,8 @@ async def run_seed() -> None:
     driver_truck_map = [
         ("USR-004", "TRK-001"),
         ("USR-005", "TRK-002"),
+        ("USR-012", "TRK-007"),
+        ("USR-018", "TRK-008"),
     ]
     for driver_id, truck_id in driver_truck_map:
         await graph_service.run(
