@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 
 
@@ -17,3 +18,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Accept common env var aliases (NEO4J_URL, DATABASE_URL, etc.)
+for alias in ("NEO4J_URL", "DATABASE_URL", "NEO4J_CONNECTION_URI"):
+    val = os.environ.get(alias)
+    if val and settings.neo4j_uri == "bolt://localhost:7687":
+        settings.neo4j_uri = val
+        break
