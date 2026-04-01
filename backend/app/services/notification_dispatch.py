@@ -25,10 +25,17 @@ NOTIFICATION_RULES: dict[ShipmentStatus, dict] = {
     },
     ShipmentStatus.APPROVED: {
         "recipients": ["customer"],
-        "title": "Shipment Approved",
-        "message": "Your shipment {sid} has been approved.",
-        "severity": "LOW",
-        "type": "STATUS_CHANGE",
+        "title": "Shipment Approved — Details Required",
+        "message": "Your shipment {sid} has been approved. Please provide pickup details (location, weight, trucks required).",
+        "severity": "MEDIUM",
+        "type": "ACTION_REQUIRED",
+    },
+    ShipmentStatus.AWAITING_CUSTOMER_DETAILS: {
+        "recipients": ["role:LOGISTICS_MANAGER", "role:ADMIN"],
+        "title": "Customer Details Submitted",
+        "message": "Customer has provided pickup details for shipment {sid}. Ready for driver assignment.",
+        "severity": "MEDIUM",
+        "type": "ACTION_REQUIRED",
     },
     ShipmentStatus.REJECTED: {
         "recipients": ["customer"],

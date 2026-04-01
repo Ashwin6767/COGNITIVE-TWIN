@@ -9,9 +9,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Modal } from '@/components/ui/Modal';
-import { ArrowLeft, FileText, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, FileText, X, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { formatDateTime } from '@/lib/utils';
+
+const ShipmentMap = dynamic(() => import('@/components/maps/ShipmentMap'), { ssr: false });
 
 export default function ShipmentDetailPage({ params }) {
   const { id } = use(params);
@@ -29,6 +32,7 @@ export default function ShipmentDetailPage({ params }) {
   const [formNotes, setFormNotes] = useState('');
   const [dynamicOptions, setDynamicOptions] = useState({});
   const [expandedDoc, setExpandedDoc] = useState(null);
+  const [locationData, setLocationData] = useState(null);
 
   const reload = async () => {
     const [ship, tl, tr, docs] = await Promise.all([
@@ -42,6 +46,22 @@ export default function ShipmentDetailPage({ params }) {
     setTransitions(tr);
     setDocuments(docs);
   };
+
+  // Poll driver location for en-route shipments
+  useEffect(() => {
+    if (!shipment) return;
+    const enRouteStatuses = ['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'];
+    const hasLocation = shipment.pickup_lat || enRouteStatuses.includes(shipment.status);
+    if (!hasLocation) return;
+
+    const fetchLocation = () => api.get(`/shipments/${id}/location`).then(setLocationData).catch(() => {});
+    fetchLocation();
+
+    if (enRouteStatuses.includes(shipment.status)) {
+      const interval = setInterval(fetchLocation, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [shipment?.status, id]);
 
   useEffect(() => {
     reload().catch(() => {}).finally(() => setLoading(false));
@@ -143,9 +163,50 @@ export default function ShipmentDetailPage({ params }) {
                 <div><dt className="text-[#64748B]">Updated</dt><dd className="font-medium mt-0.5">{formatDateTime(shipment.updated_at)}</dd></div>
                 {shipment.cargo_description && <div className="col-span-2"><dt className="text-[#64748B]">Cargo</dt><dd className="font-medium mt-0.5">{shipment.cargo_description}</dd></div>}
                 {shipment.current_location && <div className="col-span-2"><dt className="text-[#64748B]">Current Location</dt><dd className="font-medium mt-0.5">{shipment.current_location}</dd></div>}
+                {shipment.pickup_address && <div className="col-span-2"><dt className="text-[#64748B]">Pickup Address</dt><dd className="font-medium mt-0.5">{shipment.pickup_address}</dd></div>}
+                {shipment.trucks_required && <div><dt className="text-[#64748B]">Trucks Required</dt><dd className="font-medium mt-0.5">{shipment.trucks_required}</dd></div>}
+                {shipment.assigned_driver && <div><dt className="text-[#64748B]">Assigned Driver</dt><dd className="font-medium mt-0.5">{shipment.assigned_driver.name}</dd></div>}
               </dl>
             </CardContent>
           </Card>
+
+          {/* Customer prompt to provide pickup details after approval */}
+          {shipment.status === 'APPROVED' && user?.role === 'CUSTOMER' && (
+            <Card>
+              <CardContent>
+                <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <MapPin className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-[#0F172A]">Pickup Details Required</p>
+                    <p className="text-sm text-[#64748B] mt-1">Your shipment has been approved! Please provide your pickup location, cargo weight, and number of trucks needed.</p>
+                    <p className="text-xs text-[#94A3B8] mt-1">Use the &quot;Provide Details&quot; action below to submit your information.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Map section — shown when pickup location exists or driver is en route */}
+          {(shipment.pickup_lat || locationData?.pickup_lat || locationData?.driver_lat) && (
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold text-[#0F172A] flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-blue-500" />
+                  {['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'].includes(shipment.status) ? 'Live Tracking' : 'Shipment Map'}
+                </h2>
+                {locationData?.updated_at && ['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'].includes(shipment.status) && (
+                  <p className="text-xs text-[#94A3B8]">Driver location updates every 15s</p>
+                )}
+              </CardHeader>
+              <CardContent>
+                <ShipmentMap
+                  pickup={shipment.pickup_lat ? { lat: shipment.pickup_lat, lng: shipment.pickup_lng, address: shipment.pickup_address } : locationData?.pickup_lat ? { lat: locationData.pickup_lat, lng: locationData.pickup_lng, address: locationData.pickup_address } : null}
+                  destination={shipment.origin_port?.lat ? { lat: shipment.origin_port.lat, lng: shipment.origin_port.lon, name: shipment.origin_port.name } : locationData?.origin_lat ? { lat: locationData.origin_lat, lng: locationData.origin_lng, name: locationData.origin_port_name } : null}
+                  driverLocation={locationData?.driver_lat ? { lat: locationData.driver_lat, lng: locationData.driver_lng } : null}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {transitions.length > 0 && (
             <Card>

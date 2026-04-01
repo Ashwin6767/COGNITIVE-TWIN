@@ -431,6 +431,10 @@ SHIPMENTS = [
         "id": "SHP-2026-001", "status": "IN_TRANSIT_SEA", "priority": "EXPRESS",
         "customer_id": "USR-001", "container_id": "CSLU1234567",
         "origin_port": "P001", "dest_port": "P003", "vessel_id": "V001",
+        "driver_id": "USR-004",
+        "pickup_address": "200 Yangshupu Rd, Hongkou, Shanghai",
+        "pickup_lat": 31.2600, "pickup_lng": 121.5100,
+        "trucks_required": 2, "cargo_weight_kg": 24000,
         "current_location": "Pacific Ocean", "eta": (_now + timedelta(days=7)).isoformat(),
         "created_at": (_now - timedelta(days=10)).isoformat(),
         "updated_at": (_now - timedelta(hours=6)).isoformat(),
@@ -464,6 +468,9 @@ SHIPMENTS = [
         "customer_id": "USR-001", "container_id": None,
         "origin_port": "P001", "dest_port": "P005", "vessel_id": None,
         "driver_id": "USR-004",
+        "pickup_address": "88 Waigaoqiao Free Trade Zone, Pudong, Shanghai",
+        "pickup_lat": 31.3500, "pickup_lng": 121.5880,
+        "trucks_required": 1, "cargo_weight_kg": 12000,
         "current_location": "Port of Shanghai", "eta": (_now + timedelta(days=15)).isoformat(),
         "created_at": (_now - timedelta(days=2)).isoformat(),
         "updated_at": (_now - timedelta(minutes=30)).isoformat(),
@@ -790,6 +797,10 @@ async def run_seed() -> None:
         }
         if s["eta"]:
             shp_params["eta"] = s["eta"]
+        # Include pickup location fields if present
+        for field in ("pickup_address", "pickup_lat", "pickup_lng", "trucks_required", "cargo_weight_kg"):
+            if s.get(field) is not None:
+                shp_params[field] = s[field]
 
         shp_props = ", ".join(f"{k}: ${k}" for k in shp_params)
         await graph_service.run(f"CREATE (s:Shipment {{{shp_props}}})", shp_params)
@@ -876,11 +887,18 @@ async def run_seed() -> None:
             )
 
         # -- DRIVER assignments --
-        if s.get("driver_id") and s["status"] == "DRIVER_ASSIGNED":
+        # Link driver for any shipment that has passed through DRIVER_ASSIGNED
+        post_driver_statuses = [
+            "DRIVER_ASSIGNED", "PICKUP_EN_ROUTE", "GOODS_RELEASED",
+            "IN_TRANSIT_TO_PORT", "PORT_ENTRY", "CUSTOMS_CLEARANCE",
+            "IN_YARD", "LOADED_ON_VESSEL", "IN_TRANSIT_SEA",
+            "ARRIVED_DEST_PORT", "LAST_MILE_ASSIGNED", "DELIVERED",
+        ]
+        if s.get("driver_id") and s["status"] in post_driver_statuses:
             await graph_service.run(
                 """
                 MATCH (u:User {id: $driver_id}), (s:Shipment {id: $shp_id})
-                CREATE (u)-[:ASSIGNED_PICKUP]->(s)
+                MERGE (u)-[:ASSIGNED_PICKUP]->(s)
                 """,
                 {"driver_id": s["driver_id"], "shp_id": s["id"]},
             )
@@ -888,7 +906,7 @@ async def run_seed() -> None:
             await graph_service.run(
                 """
                 MATCH (u:User {id: $driver_id}), (s:Shipment {id: $shp_id})
-                CREATE (u)-[:ASSIGNED_DELIVERY]->(s)
+                MERGE (u)-[:ASSIGNED_DELIVERY]->(s)
                 """,
                 {"driver_id": s["driver_id"], "shp_id": s["id"]},
             )

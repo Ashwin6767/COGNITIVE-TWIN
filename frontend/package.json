@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@headlessui/react": "^2.2.9",
+    "@react-google-maps/api": "^2.20.8",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^1.7.0",

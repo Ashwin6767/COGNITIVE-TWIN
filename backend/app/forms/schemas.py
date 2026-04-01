@@ -97,6 +97,27 @@ FORM_SCHEMAS: dict[str, dict] = {
             },
         ],
     },
+    "CUSTOMER_DETAILS": {
+        "title": "Pickup & Cargo Details",
+        "sections": [
+            {
+                "title": "Pickup Location",
+                "fields": [
+                    {"name": "pickup_address", "type": "text", "label": "Pickup Address", "required": True},
+                    {"name": "pickup_lat", "type": "number", "label": "Latitude", "required": True},
+                    {"name": "pickup_lng", "type": "number", "label": "Longitude", "required": True},
+                ],
+            },
+            {
+                "title": "Cargo & Transport",
+                "fields": [
+                    {"name": "cargo_weight_kg", "type": "number", "label": "Cargo Weight (kg)", "required": True},
+                    {"name": "trucks_required", "type": "number", "label": "Trucks Required", "required": True},
+                    {"name": "special_instructions", "type": "textarea", "label": "Special Instructions", "required": False},
+                ],
+            },
+        ],
+    },
     "DRIVER_ASSIGNMENT": {
         "title": "Driver Assignment",
         "sections": [

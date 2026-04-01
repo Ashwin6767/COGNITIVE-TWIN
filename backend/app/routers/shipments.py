@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from datetime import datetime, timezone
 from app.auth.dependencies import get_current_user, require_role
 from app.models.enums import UserRole
 from app.models.shipment import ShipmentRequestCreate, PaginatedResponse
 from app.services.shipment_service import shipment_service
 from app.services.workflow_engine import workflow_engine
+from app.services.graph_service import graph_service
 
 router = APIRouter(prefix="/api/shipments", tags=["Shipments"])
 
@@ -57,3 +60,45 @@ async def create_shipment_request(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+class LocationUpdate(BaseModel):
+    lat: float
+    lng: float
+
+
+@router.put("/{shipment_id}/location")
+async def update_driver_location(
+    shipment_id: str,
+    body: LocationUpdate,
+    current_user: dict = Depends(require_role(UserRole.DRIVER)),
+):
+    """Driver updates their current location for a shipment."""
+    now = datetime.now(timezone.utc).isoformat()
+    result = await graph_service.run_single("""
+        MATCH (u:User {id: $uid})-[:ASSIGNED_PICKUP|ASSIGNED_DELIVERY]->(s:Shipment {id: $sid})
+        SET s.driver_lat = $lat, s.driver_lng = $lng, s.driver_location_updated_at = $now
+        RETURN s.id AS id
+    """, {"uid": current_user["id"], "sid": shipment_id, "lat": body.lat, "lng": body.lng, "now": now})
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found or not assigned to you")
+    return {"status": "ok", "shipment_id": shipment_id, "lat": body.lat, "lng": body.lng}
+
+
+@router.get("/{shipment_id}/location")
+async def get_driver_location(shipment_id: str, current_user: dict = Depends(get_current_user)):
+    """Get current driver location for a shipment."""
+    result = await graph_service.run_single("""
+        MATCH (s:Shipment {id: $sid})
+        OPTIONAL MATCH (s)-[:ORIGIN_PORT]->(op:Port)
+        OPTIONAL MATCH (s)-[:DEST_PORT]->(dp:Port)
+        RETURN s.driver_lat AS driver_lat, s.driver_lng AS driver_lng,
+               s.driver_location_updated_at AS updated_at,
+               s.pickup_address AS pickup_address,
+               s.pickup_lat AS pickup_lat, s.pickup_lng AS pickup_lng,
+               op.lat AS origin_lat, op.lon AS origin_lng, op.name AS origin_port_name,
+               dp.lat AS dest_lat, dp.lon AS dest_lng, dp.name AS dest_port_name
+    """, {"sid": shipment_id})
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
+    return result

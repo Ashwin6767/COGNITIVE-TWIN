@@ -18,6 +18,11 @@ TRANSITIONS = {
         "required_form": "APPROVAL_FORM",
     },
     ShipmentStatus.APPROVED: {
+        "next": [ShipmentStatus.AWAITING_CUSTOMER_DETAILS],
+        "triggered_by": [UserRole.CUSTOMER],
+        "required_form": "CUSTOMER_DETAILS",
+    },
+    ShipmentStatus.AWAITING_CUSTOMER_DETAILS: {
         "next": [ShipmentStatus.DRIVER_ASSIGNED],
         "triggered_by": [UserRole.LOGISTICS_MANAGER, UserRole.ADMIN],
         "required_form": "DRIVER_ASSIGNMENT",
@@ -238,6 +243,31 @@ class WorkflowEngine:
                 "sid": shipment_id, "uid": user["id"], "did": doc_id,
                 "dtype": rule["required_form"], "data": json.dumps(form_data), "now": now,
             })
+
+        # Store pickup location on Shipment when customer provides details
+        if to_status == ShipmentStatus.AWAITING_CUSTOMER_DETAILS and form_data:
+            await graph_service.run("""
+                MATCH (s:Shipment {id: $sid})
+                SET s.pickup_address = $addr,
+                    s.pickup_lat = $lat,
+                    s.pickup_lng = $lng,
+                    s.cargo_weight_kg = $weight,
+                    s.trucks_required = $trucks
+            """, {
+                "sid": shipment_id,
+                "addr": form_data.get("pickup_address", ""),
+                "lat": float(form_data.get("pickup_lat", 0)),
+                "lng": float(form_data.get("pickup_lng", 0)),
+                "weight": float(form_data.get("cargo_weight_kg", 0)),
+                "trucks": int(form_data.get("trucks_required", 1)),
+            })
+
+        # Create driver-shipment relationship when driver is assigned
+        if to_status == ShipmentStatus.DRIVER_ASSIGNED and form_data and form_data.get("driver_id"):
+            await graph_service.run("""
+                MATCH (u:User {id: $driver_id}), (s:Shipment {id: $sid})
+                MERGE (u)-[:ASSIGNED_PICKUP]->(s)
+            """, {"driver_id": form_data["driver_id"], "sid": shipment_id})
 
         await self._dispatch_notifications(shipment_id, to_status, user)
 

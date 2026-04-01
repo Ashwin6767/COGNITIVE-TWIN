@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { StatCard } from '@/components/ui/StatCard';
@@ -8,7 +9,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/shipments/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Truck, Package, MapPin, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Truck, Package, MapPin, ArrowRight, Navigation } from 'lucide-react';
+
+const ShipmentMap = dynamic(() => import('@/components/maps/ShipmentMap'), { ssr: false });
 
 export default function DriverDashboard() {
   const { user } = useAuth();
@@ -22,8 +26,21 @@ export default function DriverDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const current = shipments.filter(s => ['DRIVER_ASSIGNED', 'PICKUP_EN_ROUTE', 'GOODS_COLLECTED', 'LAST_MILE'].includes(s.status));
+  const current = shipments.filter(s => ['DRIVER_ASSIGNED', 'PICKUP_EN_ROUTE', 'GOODS_COLLECTED', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT', 'LAST_MILE_ASSIGNED'].includes(s.status));
   const completed = shipments.filter(s => s.status === 'DELIVERED');
+  const [updatingLocation, setUpdatingLocation] = useState(false);
+
+  const updateMyLocation = async (shipmentId) => {
+    setUpdatingLocation(true);
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          await api.put(`/shipments/${shipmentId}/location`, { lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setUpdatingLocation(false);
+        }, () => setUpdatingLocation(false));
+      }
+    } catch { setUpdatingLocation(false); }
+  };
 
   return (
     <div className="space-y-6">
@@ -42,18 +59,42 @@ export default function DriverDashboard() {
           </CardHeader>
           <CardContent>
             {current.map(s => (
-              <Link key={s.id} href={`/shipments/${s.id}`} className="block p-4 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors mb-3">
-                <div className="flex items-center justify-between">
+              <div key={s.id} className="p-4 rounded-lg border border-blue-200 bg-blue-50 mb-3">
+                <Link href={`/shipments/${s.id}`} className="flex items-center justify-between hover:opacity-80 transition-opacity">
                   <div>
                     <p className="font-medium text-[#0F172A]">{s.id}</p>
                     <p className="text-sm text-[#64748B]">{s.origin_port?.name || '—'} → {s.dest_port?.name || '—'}</p>
+                    {s.pickup_address && <p className="text-xs text-[#64748B] mt-1">📍 {s.pickup_address}</p>}
+                    {s.trucks_required && <p className="text-xs text-[#64748B]">🚛 {s.trucks_required} truck(s) · {s.cargo_weight_kg ? `${s.cargo_weight_kg} kg` : ''}</p>}
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={s.status} />
                     <ArrowRight className="w-4 h-4 text-[#94A3B8]" />
                   </div>
-                </div>
-              </Link>
+                </Link>
+
+                {/* Map for pickup location */}
+                {s.pickup_lat && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <ShipmentMap
+                      pickup={{ lat: s.pickup_lat, lng: s.pickup_lng, address: s.pickup_address }}
+                      destination={s.origin_port?.lat ? { lat: s.origin_port.lat, lng: s.origin_port.lon, name: s.origin_port.name } : null}
+                      compact
+                    />
+                  </div>
+                )}
+
+                {/* Share location button for en-route statuses */}
+                {['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'].includes(s.status) && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <Button size="sm" variant="secondary" disabled={updatingLocation} onClick={() => updateMyLocation(s.id)}>
+                      <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                      {updatingLocation ? 'Sharing...' : 'Share My Location'}
+                    </Button>
+                    <p className="text-xs text-[#94A3B8] mt-1">Share your location so the customer and manager can track you.</p>
+                  </div>
+                )}
+              </div>
             ))}
           </CardContent>
         </Card>

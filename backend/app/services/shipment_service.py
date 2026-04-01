@@ -11,12 +11,16 @@ class ShipmentService:
             OPTIONAL MATCH (s)-[:CONTAINS]->(c:Container)
             OPTIONAL MATCH (s)-[:CURRENT_VESSEL]->(v:Vessel)
             OPTIONAL MATCH (s)<-[:APPROVED_AS]-(r:ShipmentRequest)<-[:REQUESTED]-(u:User)
-            RETURN s {.id, .status, .priority, .current_location, .eta, .created_at, .updated_at} AS shipment,
-                   op {.id, .name, .country} AS origin_port,
-                   dp {.id, .name, .country} AS dest_port,
+            OPTIONAL MATCH (drv:User)-[:ASSIGNED_PICKUP]->(s)
+            RETURN s {.id, .status, .priority, .current_location, .eta, .created_at, .updated_at,
+                       .pickup_address, .pickup_lat, .pickup_lng, .trucks_required, .cargo_weight_kg,
+                       .driver_lat, .driver_lng, .driver_location_updated_at} AS shipment,
+                   op {.id, .name, .country, .lat, .lon} AS origin_port,
+                   dp {.id, .name, .country, .lat, .lon} AS dest_port,
                    c {.id, .type, .status, .yard_position} AS container,
                    v {.id, .name, .status} AS vessel,
-                   u {.id, .name, .email} AS customer
+                   u {.id, .name, .email} AS customer,
+                   drv {.id, .name, .email} AS assigned_driver
         """, {"id": shipment_id})
         if not result:
             return None
@@ -26,6 +30,7 @@ class ShipmentService:
         ship["container"] = result["container"]
         ship["vessel"] = result["vessel"]
         ship["customer"] = result["customer"]
+        ship["assigned_driver"] = result["assigned_driver"]
         return ship
 
     async def list_shipments(
@@ -116,8 +121,11 @@ class ShipmentService:
                 MATCH (u:User {id: $uid})-[:ASSIGNED_PICKUP|ASSIGNED_DELIVERY]->(s:Shipment)
                 OPTIONAL MATCH (s)-[:ORIGIN_PORT]->(op:Port)
                 OPTIONAL MATCH (s)-[:DEST_PORT]->(dp:Port)
-                RETURN s {.id, .status, .priority, .eta, .created_at, .updated_at} AS shipment,
-                       op {.id, .name} AS origin_port, dp {.id, .name} AS dest_port
+                RETURN s {.id, .status, .priority, .eta, .created_at, .updated_at,
+                           .pickup_address, .pickup_lat, .pickup_lng,
+                           .trucks_required, .cargo_weight_kg} AS shipment,
+                       op {.id, .name, .lat, .lon} AS origin_port,
+                       dp {.id, .name, .lat, .lon} AS dest_port
                 ORDER BY s.updated_at DESC
             """, {"uid": user["id"]})
             items = []

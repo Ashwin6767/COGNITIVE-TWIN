@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/shipments/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Ship, Package, CheckCircle, Plus, ArrowRight } from 'lucide-react';
+import { Ship, Package, CheckCircle, Plus, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
@@ -40,6 +40,7 @@ export default function CustomerDashboard() {
   const active = shipments.filter(s => !['DELIVERED', 'REJECTED', 'CANCELLED'].includes(s.status));
   const inTransit = shipments.filter(s => s.status === 'IN_TRANSIT_SEA');
   const delivered = shipments.filter(s => s.status === 'DELIVERED');
+  const needsDetails = shipments.filter(s => s.status === 'APPROVED');
 
   return (
     <div className="space-y-6">
@@ -61,6 +62,27 @@ export default function CustomerDashboard() {
         <StatCard label="In Transit" value={inTransit.length} icon={Package} color="purple" />
         <StatCard label="Delivered" value={delivered.length} icon={CheckCircle} color="green" />
       </div>
+
+      {needsDetails.length > 0 && (
+        <Card>
+          <CardContent>
+            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium text-[#0F172A]">Action Required — Provide Pickup Details</p>
+                <p className="text-sm text-[#64748B] mt-1">{needsDetails.length} shipment(s) approved and awaiting your pickup location, weight, and truck requirements.</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {needsDetails.map(s => (
+                    <Link key={s.id} href={`/shipments/${s.id}`} className="text-sm text-blue-600 hover:text-blue-700 underline">
+                      {s.id}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
