@@ -1,5 +1,6 @@
 'use client';
 import { useAuth } from '@/lib/auth';
+import { NotificationProvider } from '@/lib/notifications';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { useRouter } from 'next/navigation';
@@ -26,14 +27,16 @@ export function AppShell({ children }) {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
-        <main className="flex-1 overflow-y-auto px-8 py-6">
-          {children}
-        </main>
+    <NotificationProvider>
+      <div className="flex h-screen bg-[#F8FAFC]">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <TopBar />
+          <main className="flex-1 overflow-y-auto px-8 py-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

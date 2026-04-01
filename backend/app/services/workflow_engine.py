@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from app.services.graph_service import graph_service
 from app.models.enums import ShipmentStatus, UserRole, TERMINAL_STATUSES
+from app.services.notification_dispatch import dispatch_transition_notifications
 
 
 TRANSITIONS = {
@@ -153,7 +154,16 @@ class WorkflowEngine:
             CREATE (s)-[:HAS_EVENT]->(e)
         """, {"eid": evt_id, "sid": ship_id, "user_name": user.get("name", "System"), "now": now})
 
+        await self._dispatch_notifications(ship_id, ShipmentStatus.UNDER_REVIEW, user)
+
         return {"id": ship_id, "status": "UNDER_REVIEW"}
+
+    async def _dispatch_notifications(self, shipment_id: str, to_status: ShipmentStatus, user: dict):
+        """Fire-and-forget notification dispatch (errors are silently ignored)."""
+        try:
+            await dispatch_transition_notifications(shipment_id, to_status, user["id"])
+        except Exception:
+            pass  # notifications should never block the workflow
 
     async def transition(
         self, shipment_id: str, to_status: ShipmentStatus, user: dict,
@@ -229,6 +239,8 @@ class WorkflowEngine:
                 "dtype": rule["required_form"], "data": json.dumps(form_data), "now": now,
             })
 
+        await self._dispatch_notifications(shipment_id, to_status, user)
+
         return {
             "shipment_id": shipment_id, "from_status": current.value,
             "to_status": to_status.value, "event_id": event_id,
@@ -268,6 +280,8 @@ class WorkflowEngine:
             "eid": event_id, "uid": user["id"], "now": now,
             "details": json.dumps({"reason": reason}),
         })
+
+        await self._dispatch_notifications(shipment_id, ShipmentStatus.CANCELLED, user)
 
         return {"shipment_id": shipment_id, "status": "CANCELLED", "event_id": event_id}
 

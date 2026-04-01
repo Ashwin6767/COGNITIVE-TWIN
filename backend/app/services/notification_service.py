@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from app.services.graph_service import graph_service
+from app.services.event_service import manager as ws_manager
 
 
 class NotificationService:
@@ -32,12 +33,24 @@ class NotificationService:
                 CREATE (n)-[:ABOUT]->(s)
             """, {"nid": nid, "sid": shipment_id})
 
+        # Real-time delivery via WebSocket
+        payload = {
+            "event": "new_notification",
+            "data": {
+                "id": nid, "type": notif_type, "title": title,
+                "message": message, "severity": severity,
+                "shipment_id": shipment_id, "is_read": False,
+                "created_at": now,
+            },
+        }
+        await ws_manager.broadcast_to_user(recipient_id, payload)
+
         return {"id": nid, "title": title, "severity": severity}
 
     async def notify_role_group(
         self, role: str, title: str, message: str,
         severity: str, notif_type: str, shipment_id: str | None = None,
-        port_id: str | None = None
+        port_id: str | None = None, exclude_user_id: str | None = None
     ):
         where = "WHERE u.role = $role AND u.is_active = true"
         params = {"role": role}
@@ -47,14 +60,17 @@ class NotificationService:
 
         users = await graph_service.run(f"MATCH (u:User) {where} RETURN u.id AS uid", params)
         for u in users:
+            if exclude_user_id and u["uid"] == exclude_user_id:
+                continue
             await self.create(u["uid"], title, message, severity, notif_type, shipment_id)
 
     async def notify_shipment_stakeholders(
-        self, shipment_id: str, title: str, message: str, severity: str, notif_type: str
+        self, shipment_id: str, title: str, message: str, severity: str, notif_type: str,
+        exclude_user_id: str | None = None
     ):
         users = await graph_service.run("""
             MATCH (s:Shipment {id: $sid})
-            OPTIONAL MATCH (s)<-[:REQUESTED]-(:ShipmentRequest)<-[:REQUESTED]-(customer:User)
+            OPTIONAL MATCH (customer:User)-[:REQUESTED]->(s)
             OPTIONAL MATCH (driver:User)-[:ASSIGNED_PICKUP]->(s)
             OPTIONAL MATCH (driver2:User)-[:ASSIGNED_DELIVERY]->(s)
             WITH collect(DISTINCT customer.id) + collect(DISTINCT driver.id) + collect(DISTINCT driver2.id) AS ids
@@ -63,6 +79,8 @@ class NotificationService:
             RETURN uid
         """, {"sid": shipment_id})
         for u in users:
+            if exclude_user_id and u["uid"] == exclude_user_id:
+                continue
             await self.create(u["uid"], title, message, severity, notif_type, shipment_id)
 
     async def get_unread(self, user_id: str) -> list[dict]:

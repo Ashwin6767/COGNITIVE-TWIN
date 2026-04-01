@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useNotifications } from '@/lib/notifications';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -10,14 +11,18 @@ import { timeAgo } from '@/lib/utils';
 
 const TYPE_BADGE = {
   INFO:    'bg-blue-100 text-blue-700',
+  STATUS_CHANGE: 'bg-blue-100 text-blue-700',
   WARNING: 'bg-yellow-100 text-yellow-800',
+  ACTION_REQUIRED: 'bg-yellow-100 text-yellow-800',
   ERROR:   'bg-red-100 text-red-700',
+  ALERT:   'bg-red-100 text-red-700',
   SUCCESS: 'bg-green-100 text-green-700',
 };
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { latestNotification, markRead: ctxMarkRead, markAllRead: ctxMarkAllRead, refreshCount } = useNotifications();
 
   useEffect(() => {
     api.get('/notifications/')
@@ -26,20 +31,34 @@ export default function NotificationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Auto-prepend new real-time notifications
+  useEffect(() => {
+    if (latestNotification && !loading) {
+      setNotifications(prev => {
+        if (prev.some(n => n.id === latestNotification.id)) return prev;
+        return [{ ...latestNotification, read: false }, ...prev];
+      });
+    }
+  }, [latestNotification, loading]);
+
   const markRead = async (id) => {
     try {
-      await api.post(`/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      await api.put(`/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true, read: true } : n));
+      ctxMarkRead();
     } catch {}
   };
 
   const markAllRead = async () => {
-    const unread = notifications.filter(n => !n.read);
-    await Promise.allSettled(unread.map(n => api.post(`/notifications/${n.id}/read`)));
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    try {
+      await api.put('/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true, read: true })));
+      ctxMarkAllRead();
+    } catch {}
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const isUnread = (n) => !n.is_read && !n.read;
+  const unreadCount = notifications.filter(isUnread).length;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -69,12 +88,12 @@ export default function NotificationsPage() {
           ) : (
             <div className="divide-y divide-[#E2E8F0]">
               {notifications.map(n => (
-                <div key={n.id} className={`flex items-start gap-3 py-4 ${!n.read ? 'bg-blue-50/50 -mx-6 px-6' : ''}`}>
+                <div key={n.id} className={`flex items-start gap-3 py-4 ${isUnread(n) ? 'bg-blue-50/50 -mx-6 px-6' : ''}`}>
                   <div className="mt-1">
-                    {n.read ? (
-                      <Check className="w-4 h-4 text-[#94A3B8]" />
-                    ) : (
+                    {isUnread(n) ? (
                       <Circle className="w-4 h-4 text-blue-600 fill-blue-600" />
+                    ) : (
+                      <Check className="w-4 h-4 text-[#94A3B8]" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -107,7 +126,7 @@ export default function NotificationsPage() {
                       )}
                     </div>
                   </div>
-                  {!n.read && (
+                  {isUnread(n) && (
                     <button
                       onClick={() => markRead(n.id)}
                       className="text-xs text-blue-600 hover:text-blue-700 shrink-0"
