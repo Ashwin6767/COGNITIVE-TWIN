@@ -25,3 +25,8 @@ for alias in ("NEO4J_URL", "DATABASE_URL", "NEO4J_CONNECTION_URI"):
     if val and settings.neo4j_uri == "bolt://localhost:7687":
         settings.neo4j_uri = val
         break
+
+# Auto-construct AuraDB URI from user ID if URI wasn't explicitly set
+if settings.neo4j_uri == "bolt://localhost:7687" and settings.neo4j_user != "neo4j":
+    aura_uri = f"neo4j+ssc://{settings.neo4j_user}.databases.neo4j.io"
+    settings.neo4j_uri = aura_uri
