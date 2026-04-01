@@ -22,6 +22,10 @@ export default function ShipmentMap({ pickup, destination, driverLocation, origi
     if (pickup?.lat && pickup?.lng) {
       return `https://maps.google.com/maps?q=${pickup.lat},${pickup.lng}&z=14&output=embed`;
     }
+    // If we have just destination, show that
+    if (destination?.lat && destination?.lng) {
+      return `https://maps.google.com/maps?q=${destination.lat},${destination.lng}&z=12&output=embed`;
+    }
     return null;
   };
 
@@ -88,6 +92,15 @@ export default function ShipmentMap({ pickup, destination, driverLocation, origi
             className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"
           >
             <ExternalLink className="w-3 h-3" /> Open Pickup in Google Maps
+          </button>
+        )}
+        {destination?.lat && !pickup?.lat && (
+          <button
+            onClick={() => openLocation(destination)}
+            className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Navigation className="w-3.5 h-3.5" /> Open Destination in Google Maps
+            <ExternalLink className="w-3 h-3" />
           </button>
         )}
         {driverLocation?.lat && (

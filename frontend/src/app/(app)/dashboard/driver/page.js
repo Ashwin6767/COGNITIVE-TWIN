@@ -73,12 +73,12 @@ export default function DriverDashboard() {
                   </div>
                 </Link>
 
-                {/* Map for pickup / route */}
-                {(s.pickup_lat || s.origin_port?.lat) && (
+                {/* Map showing where driver needs to go */}
+                {(s.pickup_lat || s.origin_port?.lat || s.dest_port?.lat) && (
                   <div className="mt-3 pt-3 border-t border-blue-200">
                     <ShipmentMap
                       pickup={s.pickup_lat ? { lat: s.pickup_lat, lng: s.pickup_lng, address: s.pickup_address } : null}
-                      destination={s.origin_port?.lat ? { lat: s.origin_port.lat, lng: s.origin_port.lon, name: s.origin_port.name } : null}
+                      destination={s.origin_port?.lat ? { lat: s.origin_port.lat, lng: s.origin_port.lon, name: `${s.origin_port.name} (Origin Port)` } : s.dest_port?.lat ? { lat: s.dest_port.lat, lng: s.dest_port.lon, name: `${s.dest_port.name} (Dest Port)` } : null}
                     />
                   </div>
                 )}
