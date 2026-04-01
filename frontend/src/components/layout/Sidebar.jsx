@@ -20,6 +20,7 @@ const NAV_BY_ROLE = {
   LOGISTICS_MANAGER: [
     { label: 'Dashboard', href: '/dashboard/manager', icon: LayoutDashboard },
     { label: 'All Shipments', href: '/shipments', icon: Ship },
+    { label: 'Analytics', href: '/analytics', icon: BarChart3 },
     { label: 'Documents', href: '/documents', icon: FileText },
     { label: 'Users', href: '/admin/users', icon: Users },
     { label: 'Notifications', href: '/notifications', icon: Bell },
@@ -50,6 +51,7 @@ const NAV_BY_ROLE = {
   ADMIN: [
     { label: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
     { label: 'All Shipments', href: '/shipments', icon: Ship },
+    { label: 'Analytics', href: '/analytics', icon: BarChart3 },
     { label: 'Users', href: '/admin/users', icon: Users },
     { label: 'System', href: '/admin/system', icon: Settings },
     { label: 'Notifications', href: '/notifications', icon: Bell },

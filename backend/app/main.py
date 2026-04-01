@@ -33,14 +33,20 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        settings.frontend_url,
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://*.vercel.app",
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Import and register routers
-from app.routers import auth, shipments, workflow, documents, notifications, users, ports, vessels, containers, yard, system  # noqa: E402
+from app.routers import auth, shipments, workflow, documents, notifications, users, ports, vessels, containers, yard, system, analytics  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(shipments.router)
@@ -53,6 +59,7 @@ app.include_router(vessels.router)
 app.include_router(containers.router)
 app.include_router(yard.router)
 app.include_router(system.router)
+app.include_router(analytics.router)
 
 # WebSocket
 app.add_api_websocket_route("/api/ws/stream", websocket_endpoint)
