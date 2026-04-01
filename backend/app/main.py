@@ -61,5 +61,16 @@ app.include_router(yard.router)
 app.include_router(system.router)
 app.include_router(analytics.router)
 
+# Quick diagnostic (safe: only shows if vars are set, not values)
+@app.get("/api/debug/config")
+async def debug_config():
+    return {
+        "neo4j_uri_set": settings.neo4j_uri != "bolt://localhost:7687",
+        "neo4j_uri_prefix": settings.neo4j_uri[:20] + "..." if len(settings.neo4j_uri) > 20 else settings.neo4j_uri,
+        "neo4j_user": settings.neo4j_user,
+        "environment": settings.environment,
+        "demo_mode": settings.demo_mode,
+    }
+
 # WebSocket
 app.add_api_websocket_route("/api/ws/stream", websocket_endpoint)
