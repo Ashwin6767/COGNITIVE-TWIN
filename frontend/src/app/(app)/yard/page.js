@@ -33,7 +33,14 @@ export default function YardPage() {
     if (!selectedPort) return;
     setYardLoading(true);
     api.get(`/yard/${selectedPort}`)
-      .then(data => setYard(data))
+      .then(data => {
+        // Flatten: backend returns { yard: {...}, port: {...}, containers: [...] }
+        if (data?.yard) {
+          setYard({ ...data.yard, containers: data.containers || [], port: data.port });
+        } else {
+          setYard(data);
+        }
+      })
       .catch(() => setYard(null))
       .finally(() => setYardLoading(false));
   }, [selectedPort]);

@@ -15,6 +15,7 @@ import dynamic from 'next/dynamic';
 import { formatDateTime } from '@/lib/utils';
 
 const ShipmentMap = dynamic(() => import('@/components/maps/ShipmentMap'), { ssr: false });
+const LocationPicker = dynamic(() => import('@/components/maps/LocationPicker'), { ssr: false });
 
 export default function ShipmentDetailPage({ params }) {
   const { id } = use(params);
@@ -314,13 +315,29 @@ export default function ShipmentDetailPage({ params }) {
             {formSchema.sections?.map((section, si) => (
               <div key={si} className="space-y-3">
                 {formSchema.sections.length > 1 && <h3 className="text-sm font-medium text-[#0F172A] border-b border-[#E2E8F0] pb-2">{section.title}</h3>}
-                {section.fields?.map(field => (
+                {section.fields?.map(field => {
+                  // Skip hidden fields in the UI (they're set programmatically)
+                  if (field.type === 'hidden') return null;
+                  return (
                   <div key={field.name} className="space-y-1.5">
                     <label className="block text-sm font-medium text-[#0F172A]">
                       {field.label || field.name.replace(/_/g, ' ')}
                       {field.required && <span className="text-red-500 ml-1">*</span>}
                     </label>
-                    {field.type === 'select' ? (
+                    {field.type === 'location_search' ? (
+                      <LocationPicker
+                        value={formData[field.name] || ''}
+                        required={field.required}
+                        onChange={({ address, lat, lng }) => {
+                          setFormData(d => ({
+                            ...d,
+                            [field.name]: address,
+                            pickup_lat: String(lat),
+                            pickup_lng: String(lng),
+                          }));
+                        }}
+                      />
+                    ) : field.type === 'select' ? (
                       <select
                         className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required={field.required}
@@ -358,7 +375,8 @@ export default function ShipmentDetailPage({ params }) {
                       />
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ))}
             <div className="flex justify-end gap-3 pt-2">

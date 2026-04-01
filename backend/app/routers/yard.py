@@ -26,13 +26,13 @@ async def get_yard_layout(port_id: str, current_user: dict = Depends(get_current
         slots = await graph_service.run("""
             MATCH (y:Yard)-[:LOCATED_AT]->(p:Port {id: $id})
             OPTIONAL MATCH (c:Container)-[:IN_YARD]->(y)
-            RETURN c {.id, .type, .status, .yard_position} AS container
+            RETURN c {.id, .type, .status, .yard_position, .weight_kg} AS container
         """, {"id": port_id})
 
         return {
             "yard": result["yard"],
             "port": result["port"],
-            "slots": [r["container"] for r in slots if r["container"]],
+            "containers": [r["container"] for r in slots if r["container"]],
         }
     except HTTPException:
         raise
@@ -46,7 +46,7 @@ async def get_yard_containers(port_id: str, current_user: dict = Depends(get_cur
         results = await graph_service.run("""
             MATCH (y:Yard)-[:LOCATED_AT]->(p:Port {id: $id}),
                   (c:Container)-[:IN_YARD]->(y)
-            RETURN c {.id, .type, .status, .yard_position} AS container
+            RETURN c {.id, .type, .status, .yard_position, .weight_kg} AS container
             ORDER BY c.yard_position ASC
         """, {"id": port_id})
         return [r["container"] for r in results]

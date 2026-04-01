@@ -103,9 +103,9 @@ FORM_SCHEMAS: dict[str, dict] = {
             {
                 "title": "Pickup Location",
                 "fields": [
-                    {"name": "pickup_address", "type": "text", "label": "Pickup Address", "required": True},
-                    {"name": "pickup_lat", "type": "number", "label": "Latitude", "required": True},
-                    {"name": "pickup_lng", "type": "number", "label": "Longitude", "required": True},
+                    {"name": "pickup_address", "type": "location_search", "label": "Search Pickup Location", "required": True},
+                    {"name": "pickup_lat", "type": "hidden", "label": "Latitude", "required": True},
+                    {"name": "pickup_lng", "type": "hidden", "label": "Longitude", "required": True},
                 ],
             },
             {
