@@ -7,14 +7,16 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/shipments/StatusBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import {
-  Ship, ClipboardList, Truck, Anchor, CheckCircle, AlertTriangle, ArrowRight
+  Ship, ClipboardList, Truck, Anchor, CheckCircle, AlertTriangle, ArrowRight, Navigation
 } from 'lucide-react';
 
 export default function ManagerDashboard() {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ pending: 0, approved: 0, transit: 0, atPort: 0, delivered: 0 });
+  const [rerouteEvents, setRerouteEvents] = useState([]);
 
   useEffect(() => {
     api.get('/shipments/?page=1&limit=50').then(data => {
@@ -23,15 +25,21 @@ export default function ManagerDashboard() {
       setStats({
         pending: items.filter(s => ['REQUEST_SUBMITTED', 'UNDER_REVIEW'].includes(s.status)).length,
         approved: items.filter(s => s.status === 'APPROVED').length,
-        transit: items.filter(s => ['IN_TRANSIT_SEA', 'PICKUP_EN_ROUTE', 'LAST_MILE'].includes(s.status)).length,
-        atPort: items.filter(s => ['AT_ORIGIN_PORT', 'AT_DESTINATION_PORT', 'IN_YARD_ORIGIN'].includes(s.status)).length,
+        transit: items.filter(s => ['IN_TRANSIT_SEA', 'PICKUP_EN_ROUTE', 'IN_TRANSIT_TO_PORT', 'LAST_MILE_ASSIGNED'].includes(s.status)).length,
+        atPort: items.filter(s => ['PORT_ENTRY', 'ARRIVED_DEST_PORT', 'IN_YARD', 'CUSTOMS_CLEARANCE', 'LOADED_ON_VESSEL'].includes(s.status)).length,
         delivered: items.filter(s => s.status === 'DELIVERED').length,
       });
     }).catch(() => {}).finally(() => setLoading(false));
+
+    // Fetch unread re-route notifications
+    api.get('/notifications/?page=1&limit=30').then(data => {
+      const items = data.items || [];
+      setRerouteEvents(items.filter(n => n.title?.includes('Re-Route') && !n.is_read));
+    }).catch(() => {});
   }, []);
 
   const needsAttention = shipments.filter(s =>
-    ['REQUEST_SUBMITTED', 'UNDER_REVIEW', 'CUSTOMS_CLEARANCE_ORIGIN', 'CUSTOMS_CLEARANCE_DEST'].includes(s.status)
+    ['REQUEST_SUBMITTED', 'UNDER_REVIEW', 'CUSTOMS_CLEARANCE', 'AWAITING_CUSTOMER_DETAILS', 'ARRIVED_DEST_PORT'].includes(s.status)
   );
 
   return (
@@ -53,6 +61,43 @@ export default function ManagerDashboard() {
             <div>
               <p className="text-sm font-medium text-yellow-800">Needs Attention</p>
               <p className="text-xs text-yellow-700 mt-1">{needsAttention.length} shipment(s) require your action</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {rerouteEvents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Navigation className="w-5 h-5 text-amber-600" />
+              <h2 className="text-lg font-semibold text-[#0F172A]">Active Re-Routing Events</h2>
+              <Badge variant="danger">{rerouteEvents.length}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {rerouteEvents.map(evt => (
+                <div key={evt.id} className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#0F172A]">{evt.title}</p>
+                    <p className="text-xs text-[#64748B] mt-1 line-clamp-2">{evt.message}</p>
+                    <div className="flex gap-2 mt-2">
+                      {evt.shipment_id && (
+                        <Link href={`/shipments/${evt.shipment_id}`}>
+                          <Button size="sm" variant="primary">Review Shipment</Button>
+                        </Link>
+                      )}
+                      <Button size="sm" variant="secondary" onClick={() => {
+                        api.put(`/notifications/${evt.id}/read`).then(() =>
+                          setRerouteEvents(prev => prev.filter(e => e.id !== evt.id))
+                        );
+                      }}>Dismiss</Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

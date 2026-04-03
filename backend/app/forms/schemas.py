@@ -388,6 +388,59 @@ FORM_SCHEMAS: dict[str, dict] = {
             },
         ],
     },
+    "HANDOVER_CONFIRMATION": {
+        "title": "Goods Handover Confirmation",
+        "sections": [
+            {
+                "title": "Handover Details",
+                "fields": [
+                    {"name": "packages_verified", "type": "number", "label": "Packages Verified", "required": True},
+                    {
+                        "name": "condition_on_receipt",
+                        "type": "select",
+                        "label": "Condition on Receipt",
+                        "required": True,
+                        "options": ["GOOD", "MINOR_DAMAGE", "DAMAGED"],
+                    },
+                    {"name": "driver_notes", "type": "textarea", "label": "Driver Notes", "required": False},
+                    {"name": "confirmation_time", "type": "datetime", "label": "Confirmation Time", "required": True},
+                ],
+            },
+        ],
+    },
+    "CONGESTION_REPORT": {
+        "title": "Congestion Report",
+        "sections": [
+            {
+                "title": "Congestion Details",
+                "fields": [
+                    {
+                        "name": "port_id",
+                        "type": "select",
+                        "label": "Port",
+                        "required": True,
+                        "source": "ports",
+                    },
+                    {
+                        "name": "congestion_type",
+                        "type": "select",
+                        "label": "Congestion Type",
+                        "required": True,
+                        "options": ["TRAFFIC", "WEATHER", "EQUIPMENT_FAILURE", "LABOR_SHORTAGE", "OTHER"],
+                    },
+                    {
+                        "name": "severity",
+                        "type": "select",
+                        "label": "Severity",
+                        "required": True,
+                        "options": ["LOW", "MEDIUM", "HIGH"],
+                    },
+                    {"name": "description", "type": "textarea", "label": "Description", "required": True},
+                    {"name": "estimated_delay_hours", "type": "number", "label": "Estimated Delay (hours)", "required": False},
+                ],
+            },
+        ],
+    },
 }
 
 

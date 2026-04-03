@@ -18,6 +18,8 @@ async def get_current_user(
         "role": payload.get("role"),
         "company_id": payload.get("company_id"),
         "email": payload.get("email"),
+        "name": payload.get("name"),
+        "assigned_port_id": payload.get("assigned_port_id"),
     }
 
 

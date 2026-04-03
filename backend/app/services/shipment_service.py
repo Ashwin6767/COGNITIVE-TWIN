@@ -65,6 +65,11 @@ class ShipmentService:
                 MATCH (s:Shipment)-[:ORIGIN_PORT|DEST_PORT]->(p:Port {id: $port_id})
             """
             params["port_id"] = user.get("assigned_port_id", "")
+        elif role == UserRole.YARD_MANAGER:
+            match_clause = """
+                MATCH (s:Shipment)-[:ORIGIN_PORT|DEST_PORT]->(p:Port {id: $port_id})
+            """
+            params["port_id"] = user.get("assigned_port_id", "")
         elif role not in [UserRole.LOGISTICS_MANAGER, UserRole.ADMIN]:
             match_clause = "MATCH (s:Shipment)"
 

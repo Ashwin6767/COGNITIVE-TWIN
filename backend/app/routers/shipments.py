@@ -54,6 +54,20 @@ async def create_shipment_request(
     current_user: dict = Depends(require_role(UserRole.CUSTOMER)),
 ):
     try:
+        # Check destination port congestion before creating the shipment
+        if not body.congestion_acknowledged:
+            from app.services.gemini_routing_service import gemini_routing_service
+            congestion_info = await gemini_routing_service.check_port_congestion(body.dest_port_id)
+            if congestion_info.get("is_congested"):
+                alternatives = await gemini_routing_service.recommend_alternative_ports(body.dest_port_id)
+                return {
+                    "congestion_warning": True,
+                    "message": f"Port {congestion_info.get('port_name', body.dest_port_id)} is currently experiencing HIGH congestion.",
+                    "congestion_info": congestion_info,
+                    "alternatives": alternatives.get("alternatives", []),
+                    "ai_summary": alternatives.get("ai_summary", ""),
+                }
+
         result = await workflow_engine.create_shipment_request(body.model_dump(), current_user)
         return result
     except ValueError as e:

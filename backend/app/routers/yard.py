@@ -54,6 +54,66 @@ async def get_yard_containers(port_id: str, current_user: dict = Depends(get_cur
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+@router.get("/{port_id}/analytics")
+async def get_yard_analytics(port_id: str, current_user: dict = Depends(get_current_user)):
+    """Yard analytics: container distributions, slot occupancy grid for heatmap."""
+    try:
+        # Container type distribution
+        type_dist = await graph_service.run("""
+            MATCH (y:Yard)-[:LOCATED_AT]->(p:Port {id: $id}),
+                  (c:Container)-[:IN_YARD]->(y)
+            RETURN c.type AS type, count(c) AS count
+            ORDER BY count DESC
+        """, {"id": port_id})
+
+        # Container status distribution
+        status_dist = await graph_service.run("""
+            MATCH (y:Yard)-[:LOCATED_AT]->(p:Port {id: $id}),
+                  (c:Container)-[:IN_YARD]->(y)
+            RETURN c.status AS status, count(c) AS count
+            ORDER BY count DESC
+        """, {"id": port_id})
+
+        # Yard info for utilization
+        yard_info = await graph_service.run_single("""
+            MATCH (y:Yard)-[:LOCATED_AT]->(p:Port {id: $id})
+            RETURN y.id AS id, y.name AS name, y.total_slots AS total_slots,
+                   y.occupied_slots AS occupied_slots
+        """, {"id": port_id})
+
+        # Slot grid data for heatmap (each container with position)
+        slot_grid = await graph_service.run("""
+            MATCH (y:Yard)-[:LOCATED_AT]->(p:Port {id: $id}),
+                  (c:Container)-[:IN_YARD]->(y)
+            RETURN c.id AS container_id, c.yard_position AS position,
+                   c.type AS type, c.status AS status, c.weight_kg AS weight_kg
+            ORDER BY c.yard_position ASC
+        """, {"id": port_id})
+
+        # Shipments entering/leaving yard
+        yard_activity = await graph_service.run("""
+            MATCH (s:Shipment)-[:ORIGIN_PORT]->(p:Port {id: $id})
+            WHERE s.status IN ['IN_YARD', 'LOADED_ON_VESSEL', 'IN_TRANSIT_TO_PORT', 'PORT_ENTRY', 'CUSTOMS_CLEARANCE']
+            RETURN s.status AS status, count(s) AS count
+            ORDER BY count DESC
+        """, {"id": port_id})
+
+        total = yard_info["total_slots"] if yard_info else 0
+        occupied = yard_info["occupied_slots"] if yard_info else 0
+
+        return {
+            "container_type_distribution": type_dist,
+            "container_status_distribution": status_dist,
+            "total_slots": total,
+            "occupied_slots": occupied,
+            "utilization_pct": round((occupied / total) * 100, 1) if total > 0 else 0,
+            "slot_grid": slot_grid,
+            "yard_activity": yard_activity,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @router.post("/{port_id}/assign-slot")
 async def assign_yard_slot(
     port_id: str,

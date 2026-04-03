@@ -44,8 +44,10 @@ const NAV_BY_ROLE = {
   ],
   YARD_MANAGER: [
     { label: 'Dashboard', href: '/dashboard/yard', icon: LayoutDashboard },
+    { label: 'Shipments', href: '/shipments', icon: Ship },
     { label: 'Yard', href: '/yard', icon: Container },
     { label: 'Containers', href: '/containers', icon: Container },
+    { label: 'Documents', href: '/documents', icon: FileText },
     { label: 'Notifications', href: '/notifications', icon: Bell },
   ],
   ADMIN: [

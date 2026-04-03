@@ -96,10 +96,10 @@ export default function Charts({ statusChartData, priorityChartData, portUtilDat
         <Card>
           <CardHeader><h2 className="text-lg font-semibold text-[#0F172A]">Port Utilization</h2></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={portUtilData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={portUtilData} margin={{ top: 5, right: 20, bottom: 60, left: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748B' }} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748B', angle: -45, textAnchor: 'end' }} interval={0} height={60} />
                 <YAxis tick={{ fontSize: 12, fill: '#64748B' }} domain={[0, 100]} unit="%" />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="utilization" name="Utilization %" radius={[4, 4, 0, 0]}>
@@ -118,11 +118,11 @@ export default function Charts({ statusChartData, priorityChartData, portUtilDat
         <Card>
           <CardHeader><h2 className="text-lg font-semibold text-[#0F172A]">Trade Route Volume</h2></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={routeData} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 80 }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={routeData} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 140 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis type="number" tick={{ fontSize: 12, fill: '#64748B' }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#64748B' }} width={80} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748B' }} width={140} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="shipments" fill="#6366F1" name="Shipments" radius={[0, 4, 4, 0]} />
               </BarChart>

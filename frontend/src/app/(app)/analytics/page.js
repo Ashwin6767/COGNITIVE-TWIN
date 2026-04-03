@@ -6,7 +6,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import {
-  Ship, Truck, Anchor, CheckCircle, Clock, BarChart3, TrendingUp, Users
+  Ship, Truck, Anchor, CheckCircle, Clock, BarChart3, TrendingUp, Users, Brain
 } from 'lucide-react';
 
 const Charts = dynamic(() => import('@/components/analytics/Charts'), { ssr: false });
@@ -54,6 +54,8 @@ export default function AnalyticsPage() {
   const [portData, setPortData] = useState(null);
   const [perfData, setPerfData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [predictions, setPredictions] = useState({});
+  const [loadingPredictions, setLoadingPredictions] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -68,6 +70,21 @@ export default function AnalyticsPage() {
       setPerfData(pe);
     }).finally(() => setLoading(false));
   }, []);
+
+  const fetchPredictions = async () => {
+    if (!portData?.ports?.length) return;
+    setLoadingPredictions(true);
+    const results = {};
+    await Promise.all(
+      portData.ports.map(p =>
+        api.get(`/congestion/predict/${p.id}`)
+          .then(pred => { results[p.id] = pred; })
+          .catch(() => {})
+      )
+    );
+    setPredictions(results);
+    setLoadingPredictions(false);
+  };
 
   if (loading) {
     return (
@@ -193,6 +210,83 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       )}
+      {/* Predictive Congestion Analysis */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-purple-600" />
+              <h2 className="text-lg font-semibold text-[#0F172A]">Predictive Congestion Analysis</h2>
+            </div>
+            <button
+              onClick={fetchPredictions}
+              disabled={loadingPredictions || !portData?.ports?.length}
+              className="inline-flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+            >
+              <Brain className="w-4 h-4" />
+              {loadingPredictions ? 'Analyzing...' : 'Run AI Prediction'}
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {Object.keys(predictions).length === 0 ? (
+            <p className="text-sm text-[#64748B]">
+              Click &quot;Run AI Prediction&quot; to analyze congestion forecasts for all ports using Gemini AI.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(predictions).map(([portId, pred]) => (
+                <div key={portId} className="rounded-xl border border-[#E2E8F0] p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-[#0F172A]">{pred.port_name}</h3>
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${
+                      pred.current_state?.congestion === 'HIGH' ? 'bg-red-50 text-red-700' :
+                      pred.current_state?.congestion === 'MEDIUM' ? 'bg-yellow-50 text-yellow-700' :
+                      'bg-green-50 text-green-700'
+                    }`}>Current: {pred.current_state?.congestion || 'N/A'}</span>
+                  </div>
+
+                  {/* Prediction Timeline */}
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    {['6h', '12h', '24h'].map(window => {
+                      const p = pred.predictions?.[window];
+                      if (!p) return null;
+                      return (
+                        <div key={window} className="text-center p-2 rounded-lg bg-[#F8FAFC]">
+                          <p className="text-xs text-[#64748B] mb-1">{window} Forecast</p>
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            p.level === 'HIGH' ? 'bg-red-100 text-red-700' :
+                            p.level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>{p.level}</span>
+                          <p className="text-xs text-[#94A3B8] mt-1">{p.confidence}% confidence</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Risk Factors */}
+                  {pred.risk_factors?.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-xs font-medium text-[#64748B] mb-1">Risk Factors:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {pred.risk_factors.map((f, i) => (
+                          <span key={i} className="inline-block px-2 py-0.5 rounded bg-red-50 text-red-600 text-xs">{f}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Analysis */}
+                  {pred.ai_analysis && (
+                    <p className="text-xs text-[#64748B] italic mt-2">{pred.ai_analysis}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/shipments/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+
 import { Ship, Package, CheckCircle, Plus, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export default function CustomerDashboard() {
@@ -20,20 +21,17 @@ export default function CustomerDashboard() {
       .then(data => {
         const items = data.items || data || [];
         if (items.length > 0) {
-          setShipments(items);
+          return items;
         } else {
-          // Fallback: fetch all shipments if /shipments/my returns empty
-          return api.get('/shipments/?page=1&limit=50').then(fallback => {
-            setShipments(fallback.items || fallback || []);
-          });
+          return api.get('/shipments/?page=1&limit=50').then(fallback => fallback.items || fallback || []);
         }
       })
-      .catch(() => {
-        // Fallback on error
+      .catch(() =>
         api.get('/shipments/?page=1&limit=50')
-          .then(data => setShipments(data.items || data || []))
-          .catch(() => {});
-      })
+          .then(data => data.items || data || [])
+          .catch(() => [])
+      )
+      .then(shipmentData => setShipments(shipmentData))
       .finally(() => setLoading(false));
   }, []);
 

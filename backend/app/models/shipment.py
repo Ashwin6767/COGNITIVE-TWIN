@@ -14,6 +14,7 @@ class ShipmentRequestCreate(BaseModel):
     container_type: Optional[str] = None
     priority: str = "MEDIUM"
     notes: Optional[str] = None
+    congestion_acknowledged: bool = False
 
 
 class ShipmentResponse(BaseModel):

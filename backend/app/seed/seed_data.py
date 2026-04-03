@@ -118,6 +118,11 @@ USERS = [
         "role": "YARD_MANAGER", "company_id": None, "password": "demo123",
         "assigned_port_id": "P012",
     },
+    {
+        "id": "USR-021", "email": "priya@mumbai-port.in", "name": "Priya Sharma",
+        "role": "PORT_OFFICER", "company_id": None, "password": "demo123",
+        "assigned_port_id": "P006",
+    },
 ]
 
 PORTS = [
@@ -1566,6 +1571,51 @@ async def run_seed() -> None:
             doc,
         )
     print(f"   Created {len(DOCUMENTS)} documents.\n")
+
+    # ------------------------------------------------------------------
+    # 19b. Congestion Reports
+    # ------------------------------------------------------------------
+    print("🚧 Creating congestion reports …")
+    CONGESTION_REPORTS = [
+        {
+            "id": "CNG-SEED-001", "port_id": "P001", "congestion_type": "TRAFFIC",
+            "severity": "HIGH", "description": "Heavy truck traffic at gate entrance, long queues forming",
+            "estimated_delay_hours": 3.0, "reported_by": "USR-001",
+            "reporter_name": "Sarah Chen",
+        },
+        {
+            "id": "CNG-SEED-002", "port_id": "P006", "congestion_type": "EQUIPMENT_FAILURE",
+            "severity": "MEDIUM", "description": "Crane 3 is under maintenance, reducing loading capacity",
+            "estimated_delay_hours": 2.0, "reported_by": "USR-002",
+            "reporter_name": "Mike Johnson",
+        },
+        {
+            "id": "CNG-SEED-003", "port_id": "P008", "congestion_type": "WEATHER",
+            "severity": "HIGH", "description": "Typhoon warning issued, port operations partially suspended",
+            "estimated_delay_hours": 8.0, "reported_by": "USR-011",
+            "reporter_name": "Li Wei",
+        },
+        {
+            "id": "CNG-SEED-004", "port_id": "P001", "congestion_type": "LABOR_SHORTAGE",
+            "severity": "LOW", "description": "Reduced workforce during holiday period",
+            "estimated_delay_hours": 1.0, "reported_by": "USR-012",
+            "reporter_name": "Kim Min-jae",
+        },
+    ]
+    for cr in CONGESTION_REPORTS:
+        await graph_service.run("""
+            CREATE (cr:CongestionReport {
+                id: $id, port_id: $port_id, congestion_type: $congestion_type,
+                severity: $severity, description: $description,
+                estimated_delay_hours: $estimated_delay_hours,
+                reported_by: $reported_by, reporter_name: $reporter_name,
+                created_at: datetime(), status: 'ACTIVE'
+            })
+            WITH cr
+            MATCH (p:Port {id: $port_id})
+            CREATE (cr)-[:AT_PORT]->(p)
+        """, cr)
+    print(f"   Created {len(CONGESTION_REPORTS)} congestion reports.\n")
 
     # ------------------------------------------------------------------
     # Summary

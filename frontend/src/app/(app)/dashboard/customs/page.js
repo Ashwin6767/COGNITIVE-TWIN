@@ -18,8 +18,8 @@ export default function CustomsDashboard() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const pending = shipments.filter(s => ['CUSTOMS_CLEARANCE_ORIGIN', 'CUSTOMS_CLEARANCE_DEST'].includes(s.status));
-  const cleared = shipments.filter(s => ['IN_YARD_ORIGIN', 'AT_DESTINATION_PORT', 'LOADED_ON_VESSEL', 'IN_TRANSIT_SEA', 'LAST_MILE', 'DELIVERED'].includes(s.status));
+  const pending = shipments.filter(s => ['CUSTOMS_CLEARANCE'].includes(s.status));
+  const cleared = shipments.filter(s => ['IN_YARD', 'ARRIVED_DEST_PORT', 'LOADED_ON_VESSEL', 'IN_TRANSIT_SEA', 'LAST_MILE_ASSIGNED', 'DELIVERED'].includes(s.status));
 
   return (
     <div className="space-y-6">

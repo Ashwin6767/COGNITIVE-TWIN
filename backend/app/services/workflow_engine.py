@@ -38,6 +38,11 @@ TRANSITIONS = {
         "required_form": "RELEASE_FORM",
     },
     ShipmentStatus.GOODS_RELEASED: {
+        "next": [ShipmentStatus.GOODS_COLLECTED],
+        "triggered_by": [UserRole.DRIVER],
+        "required_form": "HANDOVER_CONFIRMATION",
+    },
+    ShipmentStatus.GOODS_COLLECTED: {
         "next": [ShipmentStatus.IN_TRANSIT_TO_PORT],
         "triggered_by": [UserRole.DRIVER],
         "required_form": None,

@@ -47,6 +47,8 @@ async def login(body: UserLogin):
         "role": user["role"],
         "company_id": user.get("company_id"),
         "email": user["email"],
+        "name": user.get("name"),
+        "assigned_port_id": user.get("assigned_port_id"),
     })
 
     user_resp = UserResponse(

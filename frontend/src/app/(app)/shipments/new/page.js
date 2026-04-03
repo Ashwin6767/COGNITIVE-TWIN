@@ -8,11 +8,14 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { ArrowLeft, Send } from 'lucide-react';
 import Link from 'next/link';
+import { CongestionWarningModal } from '@/components/shipments/CongestionWarningModal';
 
 export default function NewShipmentPage() {
   const router = useRouter();
   const [ports, setPorts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [congestionWarning, setCongestionWarning] = useState(null);
+  const [checkingCongestion, setCheckingCongestion] = useState(false);
   const [form, setForm] = useState({
     origin_port_id: '',
     dest_port_id: '',
@@ -42,11 +45,37 @@ export default function NewShipmentPage() {
         ...form,
         cargo_weight_kg: Number(form.cargo_weight_kg) || 0,
       });
-      router.push(`/shipments/${result.id || result.shipment_id}`);
+      if (result.congestion_warning) {
+        setCongestionWarning(result);
+      } else {
+        router.push(`/shipments/${result.id || result.shipment_id}`);
+      }
     } catch (err) {
       alert(err.message || 'Failed to create shipment');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectAlternativePort = (portId) => {
+    setForm(f => ({ ...f, dest_port_id: portId }));
+    setCongestionWarning(null);
+  };
+
+  const handleProceedAnyway = async () => {
+    setCheckingCongestion(true);
+    try {
+      const result = await api.post('/shipments/request', {
+        ...form,
+        cargo_weight_kg: Number(form.cargo_weight_kg) || 0,
+        congestion_acknowledged: true,
+      });
+      setCongestionWarning(null);
+      router.push(`/shipments/${result.id || result.shipment_id}`);
+    } catch (err) {
+      alert(err.message || 'Failed to create shipment');
+    } finally {
+      setCheckingCongestion(false);
     }
   };
 
@@ -89,6 +118,17 @@ export default function NewShipmentPage() {
           </form>
         </CardContent>
       </Card>
+
+      <CongestionWarningModal
+        isOpen={!!congestionWarning}
+        onClose={() => setCongestionWarning(null)}
+        onSelectPort={handleSelectAlternativePort}
+        onProceedAnyway={handleProceedAnyway}
+        congestionInfo={congestionWarning?.congestion_info}
+        alternatives={congestionWarning?.alternatives || []}
+        aiSummary={congestionWarning?.ai_summary || ''}
+        loading={checkingCongestion}
+      />
     </div>
   );
 }

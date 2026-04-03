@@ -42,7 +42,7 @@ async def get_overview(current_user: dict = Depends(get_current_user)):
 
     port_util = await graph_service.run("""
         MATCH (p:Port)
-        RETURN avg(p.current_utilization) AS avg_util
+        RETURN avg(p.utilization) AS avg_util
     """)
 
     return {
@@ -103,7 +103,7 @@ async def get_port_analytics(current_user: dict = Depends(get_current_user)):
         WITH p, count(s) AS outbound
         OPTIONAL MATCH (p)<-[:DEST_PORT]-(s2:Shipment)
         RETURN p.id AS id, p.name AS name, p.country AS country,
-               p.congestion_level AS congestion, p.current_utilization AS utilization,
+               p.congestion AS congestion, p.utilization AS utilization,
                p.avg_delay_hours AS avg_delay, p.capacity_teu AS capacity,
                outbound, count(s2) AS inbound
         ORDER BY utilization DESC

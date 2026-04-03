@@ -65,6 +65,13 @@ NOTIFICATION_RULES: dict[ShipmentStatus, dict] = {
         "severity": "MEDIUM",
         "type": "STATUS_CHANGE",
     },
+    ShipmentStatus.GOODS_COLLECTED: {
+        "recipients": ["customer", "role:LOGISTICS_MANAGER", "role:PORT_OFFICER:origin"],
+        "title": "Goods Handover Confirmed",
+        "message": "Driver has confirmed goods handover for shipment {sid}. Goods are safely collected.",
+        "severity": "MEDIUM",
+        "type": "STATUS_CHANGE",
+    },
     ShipmentStatus.IN_TRANSIT_TO_PORT: {
         "recipients": ["customer", "role:PORT_OFFICER:origin"],
         "title": "In Transit to Port",
