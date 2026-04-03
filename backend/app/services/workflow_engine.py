@@ -206,8 +206,8 @@ class WorkflowEngine:
         if rule["required_form"] and not form_data:
             raise ValueError(f"Form {rule['required_form']} is required for this transition")
 
-        # Cross-verify package count for driver goods confirmation
-        if (current == ShipmentStatus.GOODS_RELEASED and
+        # Cross-verify package count for driver goods confirmation (GOODS_COLLECTED → IN_TRANSIT_TO_PORT)
+        if (current == ShipmentStatus.GOODS_COLLECTED and
                 to_status == ShipmentStatus.IN_TRANSIT_TO_PORT and
                 form_data):
             verified_count = form_data.get("verified_packages_count")
