@@ -9,12 +9,17 @@ class ShipmentRequestCreate(BaseModel):
     cargo_description: str
     cargo_type: str = "GENERAL"
     weight_kg: float = 0
+    cargo_weight_kg: Optional[float] = None
     quantity: int = 1
     declared_value_usd: float = 0
     container_type: Optional[str] = None
     priority: str = "MEDIUM"
     notes: Optional[str] = None
     congestion_acknowledged: bool = False
+
+    def get_weight(self) -> float:
+        """Return weight from either field (frontend sends cargo_weight_kg)."""
+        return self.cargo_weight_kg if self.cargo_weight_kg is not None else self.weight_kg
 
 
 class ShipmentResponse(BaseModel):

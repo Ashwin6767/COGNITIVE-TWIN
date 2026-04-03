@@ -56,8 +56,11 @@ export default function NewShipmentPage() {
       });
       if (result.congestion_warning) {
         setCongestionWarning(result);
-      } else {
+      } else if (result.id || result.shipment_id) {
         router.push(`/shipments/${result.id || result.shipment_id}`);
+      } else {
+        // Fallback: go to list page if response has no ID
+        router.push('/shipments');
       }
     } catch (err) {
       alert(err.message || 'Failed to create shipment');

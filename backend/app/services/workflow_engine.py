@@ -166,7 +166,28 @@ class WorkflowEngine:
 
         await self._dispatch_notifications(ship_id, ShipmentStatus.UNDER_REVIEW, user)
 
-        return {"id": ship_id, "status": "UNDER_REVIEW"}
+        # Auto-approve: advance from UNDER_REVIEW → APPROVED so customer can
+        # immediately fill in details without waiting for manual logistics review
+        try:
+            approve_evt = f"EVT-{uuid.uuid4().hex[:8].upper()}"
+            approve_now = datetime.now(timezone.utc).isoformat()
+            await graph_service.run("""
+                MATCH (s:Shipment {id: $sid})
+                SET s.status = 'APPROVED', s.updated_at = $now
+                CREATE (e:Event {
+                    id: $eid, type: 'STATUS_CHANGE',
+                    from_status: 'UNDER_REVIEW', to_status: 'APPROVED',
+                    triggered_by: 'System (Auto-Approved)',
+                    shipment_id: $sid, timestamp: $now,
+                    details: 'Shipment automatically approved'
+                })
+                CREATE (s)-[:HAS_EVENT]->(e)
+            """, {"sid": ship_id, "eid": approve_evt, "now": approve_now})
+            await self._dispatch_notifications(ship_id, ShipmentStatus.APPROVED, user)
+            return {"id": ship_id, "status": "APPROVED"}
+        except Exception:
+            # If auto-approve fails, shipment stays at UNDER_REVIEW (still valid)
+            return {"id": ship_id, "status": "UNDER_REVIEW"}
 
     async def _dispatch_notifications(self, shipment_id: str, to_status: ShipmentStatus, user: dict):
         """Fire-and-forget notification dispatch (errors are silently ignored)."""

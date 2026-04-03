@@ -44,17 +44,24 @@ export default function ShipmentDetailPage({ params }) {
   const [locationData, setLocationData] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
 
+  const [loadError, setLoadError] = useState(null);
+
   const reload = async () => {
-    const [ship, tl, tr, docs] = await Promise.all([
-      api.get(`/shipments/${id}`),
-      api.get(`/workflow/${id}/timeline`).catch(() => []),
-      api.get(`/workflow/${id}/transitions`).catch(() => []),
-      api.get(`/documents/shipment/${id}`).catch(() => []),
-    ]);
-    setShipment(ship);
-    setTimeline(tl);
-    setTransitions(tr);
-    setDocuments(docs);
+    try {
+      const [ship, tl, tr, docs] = await Promise.all([
+        api.get(`/shipments/${id}`),
+        api.get(`/workflow/${id}/timeline`).catch(() => []),
+        api.get(`/workflow/${id}/transitions`).catch(() => []),
+        api.get(`/documents/shipment/${id}`).catch(() => []),
+      ]);
+      setShipment(ship);
+      setTimeline(tl);
+      setTransitions(tr);
+      setDocuments(docs);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err.message || 'Failed to load shipment');
+    }
   };
 
   // Poll driver location for en-route shipments
@@ -74,7 +81,7 @@ export default function ShipmentDetailPage({ params }) {
   }, [shipment?.status, id]);
 
   useEffect(() => {
-    reload().catch(() => {}).finally(() => setLoading(false));
+    reload().finally(() => setLoading(false));
   }, [id]);
 
   // Resolve dynamic source fields (ports, drivers, trucks)
@@ -171,7 +178,28 @@ export default function ShipmentDetailPage({ params }) {
   };
 
   if (loading) return <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-32 w-full" />)}</div>;
-  if (!shipment) return <p className="text-[#64748B]">Shipment not found.</p>;
+  if (loadError) return (
+    <div className="space-y-4">
+      <Link href="/shipments" className="inline-flex items-center gap-2 text-[#64748B] hover:text-[#0F172A]">
+        <ArrowLeft className="w-4 h-4" /> Back to Shipments
+      </Link>
+      <Card><CardContent>
+        <div className="text-center py-8 space-y-3">
+          <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
+          <p className="text-[#64748B]">{loadError}</p>
+          <Button onClick={() => { setLoading(true); reload().finally(() => setLoading(false)); }}>Retry</Button>
+        </div>
+      </CardContent></Card>
+    </div>
+  );
+  if (!shipment) return (
+    <div className="space-y-4">
+      <Link href="/shipments" className="inline-flex items-center gap-2 text-[#64748B] hover:text-[#0F172A]">
+        <ArrowLeft className="w-4 h-4" /> Back to Shipments
+      </Link>
+      <p className="text-[#64748B]">Shipment not found.</p>
+    </div>
+  );
 
   // ─── POD banner data ──────────────────────────────────────────────────────
   const podReleaseDoc = formModal.requiredForm === 'PROOF_OF_DELIVERY'
@@ -185,6 +213,29 @@ export default function ShipmentDetailPage({ params }) {
 
   const OverviewTab = (
     <div className="space-y-6">
+      {/* Next-steps banner for customers */}
+      {user?.role === 'CUSTOMER' && shipment.status === 'APPROVED' && transitions.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <Info className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-blue-900">Action Required</p>
+            <p className="text-sm text-blue-700 mt-1">
+              Your shipment has been approved! Please go to the <strong>Actions</strong> tab to fill in your shipment details so we can assign a driver.
+            </p>
+          </div>
+        </div>
+      )}
+      {user?.role === 'CUSTOMER' && shipment.status === 'UNDER_REVIEW' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <Clock className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">Under Review</p>
+            <p className="text-sm text-amber-700 mt-1">
+              Your request is being reviewed by the logistics team. You&apos;ll be notified once it&apos;s approved.
+            </p>
+          </div>
+        </div>
+      )}
       {/* 2×2 card grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Route */}
