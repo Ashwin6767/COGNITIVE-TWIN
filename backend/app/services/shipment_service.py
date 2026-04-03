@@ -10,7 +10,7 @@ class ShipmentService:
             OPTIONAL MATCH (s)-[:DEST_PORT]->(dp:Port)
             OPTIONAL MATCH (s)-[:CONTAINS]->(c:Container)
             OPTIONAL MATCH (s)-[:CURRENT_VESSEL]->(v:Vessel)
-            OPTIONAL MATCH (s)<-[:APPROVED_AS]-(r:ShipmentRequest)<-[:REQUESTED]-(u:User)
+            OPTIONAL MATCH (u:User)-[:REQUESTED]->(s)
             OPTIONAL MATCH (drv:User)-[:ASSIGNED_PICKUP]->(s)
             RETURN s {.id, .status, .priority, .current_location, .eta, .created_at, .updated_at,
                        .pickup_address, .pickup_lat, .pickup_lng, .trucks_required, .cargo_weight_kg,
@@ -52,7 +52,7 @@ class ShipmentService:
         match_clause = "MATCH (s:Shipment)"
         if role == UserRole.CUSTOMER:
             match_clause = """
-                MATCH (u:User {id: $uid})-[:REQUESTED]->(r:ShipmentRequest)-[:APPROVED_AS]->(s:Shipment)
+                MATCH (u:User {id: $uid})-[:REQUESTED]->(s:Shipment)
             """
             params["uid"] = user["id"]
         elif role == UserRole.DRIVER:
