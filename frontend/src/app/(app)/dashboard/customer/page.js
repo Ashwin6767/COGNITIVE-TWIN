@@ -8,32 +8,50 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/shipments/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-
-import { Ship, Package, CheckCircle, Plus, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Ship, Package, CheckCircle, Plus, ArrowRight, AlertTriangle, Bell, X } from 'lucide-react';
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [urgentNotifications, setUrgentNotifications] = useState([]);
+  const [dismissedIds, setDismissedIds] = useState(new Set());
 
   useEffect(() => {
     api.get('/shipments/my')
       .then(data => {
         const items = data.items || data || [];
         if (items.length > 0) {
-          return items;
+          setShipments(items);
         } else {
-          return api.get('/shipments/?page=1&limit=50').then(fallback => fallback.items || fallback || []);
+          // Fallback: fetch all shipments if /shipments/my returns empty
+          return api.get('/shipments/?page=1&limit=50').then(fallback => {
+            setShipments(fallback.items || fallback || []);
+          });
         }
       })
-      .catch(() =>
+      .catch(() => {
+        // Fallback on error
         api.get('/shipments/?page=1&limit=50')
-          .then(data => data.items || data || [])
-          .catch(() => [])
-      )
-      .then(shipmentData => setShipments(shipmentData))
+          .then(data => setShipments(data.items || data || []))
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    api.get('/notifications/?limit=10&unread=true')
+      .then((data) => {
+        const items = Array.isArray(data) ? data : (data.items || data.notifications || []);
+        setUrgentNotifications(items.filter(n => !n.read));
+      })
+      .catch(() => {});
+  }, []);
+
+  const dismissNotification = async (id) => {
+    setDismissedIds(prev => new Set([...prev, id]));
+    await api.put(`/notifications/${id}/read`, {}).catch(() => {});
+  };
 
   const active = shipments.filter(s => !['DELIVERED', 'REJECTED', 'CANCELLED'].includes(s.status));
   const inTransit = shipments.filter(s => s.status === 'IN_TRANSIT_SEA');
@@ -54,6 +72,36 @@ export default function CustomerDashboard() {
           <Plus className="w-4 h-4" /> New Request
         </Link>
       </div>
+
+      {/* Immediate Attention Banner */}
+      {urgentNotifications.filter(n => !dismissedIds.has(n.id)).length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Bell className="w-4 h-4 text-amber-600" />
+            <h3 className="text-sm font-semibold text-amber-800">Requires Immediate Attention</h3>
+          </div>
+          {urgentNotifications.filter(n => !dismissedIds.has(n.id)).slice(0, 5).map(n => (
+            <div key={n.id} className="flex items-start justify-between gap-3 bg-white rounded-lg border border-amber-100 p-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#0F172A] truncate">{n.title || n.message || 'Action required'}</p>
+                {n.shipment_id && (
+                  <Link href={`/shipments/${n.shipment_id}`} className="text-xs text-blue-600 hover:underline mt-0.5 block">
+                    View shipment {n.shipment_id} →
+                  </Link>
+                )}
+                {n.body && <p className="text-xs text-[#64748B] mt-0.5 line-clamp-2">{n.body}</p>}
+              </div>
+              <button
+                onClick={() => dismissNotification(n.id)}
+                className="shrink-0 p-1 rounded hover:bg-amber-100 text-amber-600 transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <StatCard label="Active Requests" value={active.length} icon={Ship} color="blue" />

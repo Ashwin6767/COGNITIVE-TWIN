@@ -45,11 +45,11 @@ TRANSITIONS = {
     ShipmentStatus.GOODS_COLLECTED: {
         "next": [ShipmentStatus.IN_TRANSIT_TO_PORT],
         "triggered_by": [UserRole.DRIVER],
-        "required_form": None,
+        "required_form": "GOODS_COLLECTED_CONFIRMATION",
     },
     ShipmentStatus.IN_TRANSIT_TO_PORT: {
         "next": [ShipmentStatus.PORT_ENTRY],
-        "triggered_by": [UserRole.DRIVER, UserRole.PORT_OFFICER],
+        "triggered_by": [UserRole.PORT_OFFICER],
         "required_form": "PORT_ENTRY_DECLARATION",
     },
     ShipmentStatus.PORT_ENTRY: {
@@ -162,7 +162,7 @@ class WorkflowEngine:
             WITH e
             MATCH (s:Shipment {id: $sid})
             CREATE (s)-[:HAS_EVENT]->(e)
-        """, {"eid": evt_id, "sid": ship_id, "user_name": user.get("name", "System"), "now": now})
+        """, {"eid": evt_id, "sid": ship_id, "user_name": user.get("name", "System (Auto)"), "now": now})
 
         await self._dispatch_notifications(ship_id, ShipmentStatus.UNDER_REVIEW, user)
 
@@ -206,6 +206,59 @@ class WorkflowEngine:
         if rule["required_form"] and not form_data:
             raise ValueError(f"Form {rule['required_form']} is required for this transition")
 
+        # Cross-verify package count for driver goods confirmation
+        if (current == ShipmentStatus.GOODS_RELEASED and
+                to_status == ShipmentStatus.IN_TRANSIT_TO_PORT and
+                form_data):
+            verified_count = form_data.get("verified_packages_count")
+            if verified_count is not None:
+                release_doc = await graph_service.run_single("""
+                    MATCH (s:Shipment {id: $sid})-[:HAS_DOCUMENT]->(d:Document)
+                    WHERE d.type = 'RELEASE_FORM'
+                    RETURN d.data AS data
+                    ORDER BY d.created_at DESC LIMIT 1
+                """, {"sid": shipment_id})
+                if release_doc and release_doc.get("data"):
+                    try:
+                        release_data = json.loads(release_doc["data"]) if isinstance(release_doc["data"], str) else release_doc["data"]
+                        customer_count = int(release_data.get("packages_count", 0))
+                        driver_count = int(verified_count)
+                        if customer_count > 0 and driver_count != customer_count:
+                            raise ValueError(
+                                f"Package count mismatch: Customer reported {customer_count} packages, "
+                                f"you entered {driver_count}. Please recount and contact the customer if there is a discrepancy."
+                            )
+                    except (ValueError, TypeError) as e:
+                        if "mismatch" in str(e):
+                            raise
+
+        # Cross-verify package count for proof of delivery
+        if (current == ShipmentStatus.LAST_MILE_ASSIGNED and
+                to_status == ShipmentStatus.DELIVERED and
+                form_data):
+            packages_received = form_data.get("packages_received")
+            override_reason = form_data.get("override_reason")
+            if packages_received is not None and not override_reason:
+                release_doc = await graph_service.run_single("""
+                    MATCH (s:Shipment {id: $sid})-[:HAS_DOCUMENT]->(d:Document)
+                    WHERE d.type = 'RELEASE_FORM'
+                    RETURN d.data AS data
+                    ORDER BY d.created_at DESC LIMIT 1
+                """, {"sid": shipment_id})
+                if release_doc and release_doc.get("data"):
+                    try:
+                        release_data = json.loads(release_doc["data"]) if isinstance(release_doc["data"], str) else release_doc["data"]
+                        customer_count = int(release_data.get("packages_count", 0))
+                        delivery_count = int(packages_received)
+                        if customer_count > 0 and delivery_count != customer_count:
+                            raise ValueError(
+                                f"Package count conflict: Original release reported {customer_count} packages, "
+                                f"delivery reports {delivery_count}. If this is intentional, provide an override_reason to proceed."
+                            )
+                    except (ValueError, TypeError) as e:
+                        if "conflict" in str(e):
+                            raise
+
         # Create event
         event_id = f"EVT-{uuid.uuid4().hex[:8].upper()}"
         now = datetime.now(timezone.utc).isoformat()
@@ -220,14 +273,14 @@ class WorkflowEngine:
             CREATE (e:Event {
                 id: $eid, type: 'STATUS_CHANGE',
                 from_status: $from_status, to_status: $to_status_str,
-                triggered_by: $uid, shipment_id: $sid,
+                triggered_by: $user_name, shipment_id: $sid,
                 timestamp: $now, details: $details
             })
             CREATE (s)-[:HAS_EVENT]->(e)
         """, {
             "sid": shipment_id, "to_status": to_status.value, "now": now,
             "eid": event_id, "from_status": current.value,
-            "to_status_str": to_status.value, "uid": user["id"],
+            "to_status_str": to_status.value, "user_name": user.get("name", user.get("email", user["id"])),
             "details": details,
         })
 

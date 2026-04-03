@@ -12,9 +12,12 @@ async def list_users(
     role: str | None = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-    current_user: dict = Depends(require_role(UserRole.ADMIN)),
+    current_user: dict = Depends(require_role(UserRole.ADMIN, UserRole.LOGISTICS_MANAGER)),
 ):
     try:
+        # Logistics managers may only view DRIVER and CUSTOMER users
+        if current_user["role"] == UserRole.LOGISTICS_MANAGER and role not in ("DRIVER", "CUSTOMER", None):
+            role = None
         return await user_service.list_users(role=role, page=page, limit=limit)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

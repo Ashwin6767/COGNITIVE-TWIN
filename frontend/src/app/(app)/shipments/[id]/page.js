@@ -4,18 +4,26 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/shipments/StatusBadge';
-import { ShipmentTimeline } from '@/components/shipments/ShipmentTimeline';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Modal } from '@/components/ui/Modal';
-import { ArrowLeft, FileText, X, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
+import { DateTimePicker, DatePicker } from '@/components/ui/DateTimePicker';
+import { FileUpload } from '@/components/ui/FileUpload';
+import { CheckCircle2, Info, Clock, FileText, ArrowLeft, ChevronDown, ChevronRight, MapPin, X, AlertTriangle, Package, Users, Truck } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { formatDateTime } from '@/lib/utils';
 
 const ShipmentMap = dynamic(() => import('@/components/maps/ShipmentMap'), { ssr: false });
 const LocationPicker = dynamic(() => import('@/components/maps/LocationPicker'), { ssr: false });
+const AddressAutocomplete = dynamic(() => import('@/components/maps/AddressAutocomplete').then(m => ({ default: m.AddressAutocomplete })), { ssr: false });
+
+const TABS = ['Overview', 'Timeline', 'Documents', 'Actions'];
+
+function toTitleCase(str) {
+  return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export default function ShipmentDetailPage({ params }) {
   const { id } = use(params);
@@ -34,6 +42,7 @@ export default function ShipmentDetailPage({ params }) {
   const [dynamicOptions, setDynamicOptions] = useState({});
   const [expandedDoc, setExpandedDoc] = useState(null);
   const [locationData, setLocationData] = useState(null);
+  const [activeTab, setActiveTab] = useState('Overview');
 
   const reload = async () => {
     const [ship, tl, tr, docs] = await Promise.all([
@@ -101,8 +110,35 @@ export default function ShipmentDetailPage({ params }) {
         const opts = await loadDynamicOptions(schema);
         setDynamicOptions(opts);
         setFormSchema(schema);
-        setFormData({});
         setFormNotes('');
+
+        // Pre-fill formData from shipment context
+        const prefill = {};
+        const allFields = schema.sections?.flatMap(s => s.fields || []) || [];
+        allFields.forEach(field => {
+          const n = field.name;
+          if (n === 'cargo_description' && shipment?.cargo_description) prefill[n] = shipment.cargo_description;
+          else if ((n === 'weight_kg' || n === 'gross_weight_kg') && shipment?.weight_kg) prefill[n] = String(shipment.weight_kg);
+          else if (n === 'declared_value_usd' && shipment?.declared_value_usd) prefill[n] = String(shipment.declared_value_usd);
+          else if (n === 'cargo_type' && shipment?.cargo_type) prefill[n] = shipment.cargo_type;
+          else if (n === 'container_numbers' && shipment?.container_type) prefill[n] = shipment.container_type;
+          else if (n === 'shipper_name' && shipment?.origin_contact) prefill[n] = shipment.origin_contact;
+          else if (n === 'consignee_name' && shipment?.dest_contact) prefill[n] = shipment.dest_contact;
+          else if (n === 'origin_company' && shipment?.origin_company) prefill[n] = shipment.origin_company;
+          else if (n === 'origin_address' && shipment?.origin_address) prefill[n] = shipment.origin_address;
+          else if (n === 'origin_city' && shipment?.origin_city) prefill[n] = shipment.origin_city;
+          else if (n === 'origin_country' && shipment?.origin_country) prefill[n] = shipment.origin_country;
+        });
+
+        // POD + RELEASE_FORM package count pre-fill
+        if (t.required_form === 'PROOF_OF_DELIVERY') {
+          const releaseDoc = documents.find(d => d.form_type === 'RELEASE_FORM' || d.type === 'RELEASE_FORM');
+          if (releaseDoc?.data?.packages_count != null) {
+            prefill['packages_received'] = String(releaseDoc.data.packages_count);
+          }
+        }
+
+        setFormData(prefill);
         setFormModal({ open: true, toStatus: t.to_status, requiredForm: t.required_form });
       } catch {
         alert('Failed to load form schema');
@@ -137,14 +173,329 @@ export default function ShipmentDetailPage({ params }) {
   if (loading) return <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-32 w-full" />)}</div>;
   if (!shipment) return <p className="text-[#64748B]">Shipment not found.</p>;
 
+  // ─── POD banner data ──────────────────────────────────────────────────────
+  const podReleaseDoc = formModal.requiredForm === 'PROOF_OF_DELIVERY'
+    ? documents.find(d => d.form_type === 'RELEASE_FORM' || d.type === 'RELEASE_FORM')
+    : null;
+
+  // ─── Tab content ─────────────────────────────────────────────────────────
+
+  const hasMap = shipment.pickup_lat || locationData?.pickup_lat || locationData?.driver_lat;
+  const enRouteStatuses = ['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'];
+
+  const OverviewTab = (
+    <div className="space-y-6">
+      {/* 2×2 card grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Route */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-[#0F172A] flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-blue-500" /> Route
+            </h3>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 text-sm font-medium text-[#0F172A]">
+              <span>{shipment.origin_port?.name || '—'}</span>
+              <span className="text-[#94A3B8]">→</span>
+              <span>{shipment.dest_port?.name || '—'}</span>
+            </div>
+            {(shipment.origin_port?.country || shipment.dest_port?.country) && (
+              <p className="text-xs text-[#94A3B8] mt-1">
+                {shipment.origin_port?.country || ''}{shipment.origin_port?.country && shipment.dest_port?.country ? ' → ' : ''}{shipment.dest_port?.country || ''}
+              </p>
+            )}
+            {shipment.pickup_address && (
+              <p className="text-xs text-[#64748B] mt-2 flex items-start gap-1">
+                <MapPin className="w-3 h-3 mt-0.5 shrink-0 text-amber-500" />
+                {shipment.pickup_address}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Cargo */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-[#0F172A] flex items-center gap-2">
+              <Package className="w-4 h-4 text-blue-500" /> Cargo
+            </h3>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-1 text-sm">
+              {shipment.cargo_description && <div><dt className="text-xs text-[#94A3B8]">Description</dt><dd className="text-[#0F172A]">{shipment.cargo_description}</dd></div>}
+              {shipment.cargo_type && <div><dt className="text-xs text-[#94A3B8]">Type</dt><dd className="text-[#0F172A]">{shipment.cargo_type}</dd></div>}
+              {shipment.weight_kg && <div><dt className="text-xs text-[#94A3B8]">Weight</dt><dd className="text-[#0F172A]">{shipment.weight_kg} kg</dd></div>}
+              {shipment.quantity && <div><dt className="text-xs text-[#94A3B8]">Quantity</dt><dd className="text-[#0F172A]">{shipment.quantity}</dd></div>}
+              {shipment.container_type && <div><dt className="text-xs text-[#94A3B8]">Container</dt><dd className="text-[#0F172A]">{shipment.container_type}</dd></div>}
+            </dl>
+          </CardContent>
+        </Card>
+
+        {/* Status */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-[#0F172A] flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500" /> Status
+            </h3>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <StatusBadge status={shipment.status} />
+              {shipment.priority && (
+                <Badge variant={shipment.priority === 'HIGH' || shipment.priority === 'CRITICAL' ? 'warning' : 'default'}>
+                  {shipment.priority}
+                </Badge>
+              )}
+            </div>
+            <dl className="space-y-1 text-sm">
+              {shipment.eta && <div><dt className="text-xs text-[#94A3B8]">ETA</dt><dd className="text-[#0F172A]">{shipment.eta}</dd></div>}
+              <div><dt className="text-xs text-[#94A3B8]">Created</dt><dd className="text-[#0F172A]">{formatDateTime(shipment.created_at)}</dd></div>
+              <div><dt className="text-xs text-[#94A3B8]">Updated</dt><dd className="text-[#0F172A]">{formatDateTime(shipment.updated_at)}</dd></div>
+            </dl>
+          </CardContent>
+        </Card>
+
+        {/* Shipment Team */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-[#0F172A] flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-500" /> Shipment Team
+            </h3>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-1 text-sm">
+              {shipment.assigned_driver && (
+                <div><dt className="text-xs text-[#94A3B8]">Driver</dt><dd className="text-[#0F172A]">{shipment.assigned_driver.name}</dd></div>
+              )}
+              {shipment.trucks_required && (
+                <div className="flex items-center gap-1">
+                  <Truck className="w-3 h-3 text-[#94A3B8]" />
+                  <dt className="text-xs text-[#94A3B8]">Trucks</dt>
+                  <dd className="text-[#0F172A] ml-1">{shipment.trucks_required}</dd>
+                </div>
+              )}
+              {shipment.origin_contact && (
+                <div><dt className="text-xs text-[#94A3B8]">Origin Contact</dt><dd className="text-[#0F172A]">{shipment.origin_contact}</dd></div>
+              )}
+              {shipment.dest_contact && (
+                <div><dt className="text-xs text-[#94A3B8]">Dest Contact</dt><dd className="text-[#0F172A]">{shipment.dest_contact}</dd></div>
+              )}
+            </dl>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pickup details alert */}
+      {shipment.status === 'APPROVED' && user?.role === 'CUSTOMER' && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <MapPin className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium text-[#0F172A]">Pickup Details Required</p>
+            <p className="text-sm text-[#64748B] mt-1">Your shipment has been approved! Please provide your pickup location, cargo weight, and number of trucks needed.</p>
+            <p className="text-xs text-[#94A3B8] mt-1">Use the &quot;Provide Details&quot; action in the Actions tab to submit your information.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Live tracking map */}
+      {hasMap && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-semibold text-[#0F172A] flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-blue-500" />
+              {enRouteStatuses.includes(shipment.status) ? 'Live Tracking' : 'Shipment Map'}
+            </h2>
+            {locationData?.updated_at && enRouteStatuses.includes(shipment.status) && (
+              <p className="text-xs text-[#94A3B8]">Driver location updates every 15s</p>
+            )}
+          </CardHeader>
+          <CardContent>
+            <ShipmentMap
+              pickup={shipment.pickup_lat ? { lat: shipment.pickup_lat, lng: shipment.pickup_lng, address: shipment.pickup_address } : locationData?.pickup_lat ? { lat: locationData.pickup_lat, lng: locationData.pickup_lng, address: locationData.pickup_address } : null}
+              destination={shipment.origin_port?.lat ? { lat: shipment.origin_port.lat, lng: shipment.origin_port.lon, name: shipment.origin_port.name } : locationData?.origin_lat ? { lat: locationData.origin_lat, lng: locationData.origin_lng, name: locationData.origin_port_name } : null}
+              driverLocation={locationData?.driver_lat ? { lat: locationData.driver_lat, lng: locationData.driver_lng } : null}
+            />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const TimelineTab = (
+    <div className="space-y-3">
+      {timeline.length === 0 && (
+        <p className="text-sm text-[#64748B] py-8 text-center">No timeline events yet.</p>
+      )}
+      {timeline.map((event, idx) => {
+        const isDelivered = event.status === 'DELIVERED';
+        return (
+          <div key={idx} className="flex gap-4">
+            {/* Step indicator */}
+            <div className="flex flex-col items-center">
+              {isDelivered ? (
+                <div className="w-9 h-9 rounded-full bg-green-50 border-2 border-green-500 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-blue-50 border-2 border-blue-200 flex items-center justify-center shrink-0 text-sm font-semibold text-blue-600">
+                  {idx + 1}
+                </div>
+              )}
+              {idx < timeline.length - 1 && <div className="w-px flex-1 bg-[#E2E8F0] mt-1" />}
+            </div>
+            {/* Event card */}
+            <div className={`flex-1 mb-4 rounded-lg border p-4 ${isDelivered ? 'bg-green-50 border-green-200' : 'bg-white border-[#E2E8F0]'}`}>
+              <div className="flex items-start justify-between gap-2">
+                <p className={`font-semibold text-sm ${isDelivered ? 'text-green-700' : 'text-[#0F172A]'}`}>
+                  {toTitleCase(event.status || event.to_status || '')}
+                </p>
+                {isDelivered && (
+                  <Badge variant="success">Delivery Complete</Badge>
+                )}
+              </div>
+              <p className="text-xs text-[#64748B] mt-1">
+                by <span className="font-semibold text-[#0F172A]">{event.actor_name || event.by || '—'}</span>
+                {' · '}
+                {formatDateTime(event.created_at || event.timestamp)}
+              </p>
+              {event.notes && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
+                  <span className="text-sm">📝</span>
+                  <p className="text-xs text-[#64748B]">{event.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const DocumentsTab = (
+    <div className="space-y-3">
+      {documents.length === 0 && (
+        <p className="text-sm text-[#64748B] py-8 text-center">No documents submitted yet.</p>
+      )}
+      {documents.map(d => {
+        const isExpanded = expandedDoc === d.id;
+        const formLabel = (d.form_type || d.type || '').replace(/_/g, ' ');
+        return (
+          <div key={d.id} className="border border-[#E2E8F0] rounded-lg overflow-hidden">
+            <button
+              onClick={() => setExpandedDoc(isExpanded ? null : d.id)}
+              className="w-full flex items-center justify-between p-4 hover:bg-[#F8FAFC] transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="w-4 h-4 text-[#64748B] shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-[#0F172A]">{formLabel || 'Document'}</p>
+                  <p className="text-xs text-[#64748B]">
+                    by <span className="font-medium text-[#0F172A]">{d.submitted_by_name || d.submitted_by || '—'}</span>
+                    {' · '}
+                    {formatDateTime(d.submitted_at || d.created_at)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant={d.status === 'APPROVED' ? 'success' : d.status === 'REJECTED' ? 'danger' : 'default'}>{d.status}</Badge>
+                {isExpanded ? <ChevronDown className="w-4 h-4 text-[#94A3B8]" /> : <ChevronRight className="w-4 h-4 text-[#94A3B8]" />}
+              </div>
+            </button>
+            {isExpanded && (
+              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                {d.data && Object.keys(d.data).length > 0 ? (
+                  <>
+                    <h4 className="text-xs font-medium text-[#64748B] uppercase tracking-wider mb-3">Form Data</h4>
+                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                      {Object.entries(d.data).map(([key, value]) => {
+                        const isNoteField = /notes|instructions|description/i.test(key);
+                        return (
+                          <div key={key} className={`flex flex-col rounded p-2 ${isNoteField ? 'bg-amber-50 border-l-4 border-amber-400 col-span-2' : ''}`}>
+                            <dt className="text-xs text-[#94A3B8] capitalize">{key.replace(/_/g, ' ')}</dt>
+                            <dd className="text-sm text-[#0F172A] mt-0.5">
+                              {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (String(value) || '—')}
+                            </dd>
+                          </div>
+                        );
+                      })}
+                    </dl>
+                    {d.notes && (
+                      <div className="mt-3 pt-3 border-t border-[#E2E8F0]">
+                        <p className="text-xs text-[#94A3B8]">Notes</p>
+                        <p className="text-sm text-[#0F172A]">{d.notes}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-[#94A3B8]">No form data recorded.</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const ActionsTab = (
+    <div className="space-y-4">
+      {transitions.length === 0 ? (
+        <div className="py-12 text-center">
+          <AlertTriangle className="w-8 h-8 text-[#94A3B8] mx-auto mb-3" />
+          <p className="text-sm text-[#64748B]">No actions available at this stage.</p>
+        </div>
+      ) : (
+        transitions.map(t => {
+          const isDanger = t.to_status === 'REJECTED' || t.to_status === 'CANCELLED';
+          return (
+            <button
+              key={t.to_status}
+              disabled={transitioning}
+              onClick={() => openTransition(t)}
+              className={`w-full text-left border rounded-xl p-4 transition-colors hover:shadow-sm disabled:opacity-50 ${
+                isDanger
+                  ? 'border-red-200 bg-red-50 hover:bg-red-100'
+                  : 'border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isDanger ? 'bg-red-100' : 'bg-blue-50'}`}>
+                    {t.required_form
+                      ? <FileText className={`w-5 h-5 ${isDanger ? 'text-red-600' : 'text-blue-600'}`} />
+                      : <CheckCircle2 className={`w-5 h-5 ${isDanger ? 'text-red-600' : 'text-blue-600'}`} />
+                    }
+                  </div>
+                  <div>
+                    <p className={`font-semibold text-sm ${isDanger ? 'text-red-700' : 'text-[#0F172A]'}`}>
+                      {toTitleCase(t.to_status)}
+                    </p>
+                    <p className="text-xs text-[#64748B] mt-0.5">
+                      {t.required_form
+                        ? `Requires form · ${t.required_form.replace(/_/g, ' ')}`
+                        : 'No form required — instant transition'}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className={`w-4 h-4 shrink-0 ${isDanger ? 'text-red-400' : 'text-[#94A3B8]'}`} />
+              </div>
+            </button>
+          );
+        })
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/shipments" className="p-2 rounded-lg hover:bg-[#F1F5F9] text-[#64748B]">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-[#0F172A]">{shipment.id}</h1>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-semibold text-[#0F172A] truncate">{shipment.id}</h1>
           <p className="text-sm text-[#64748B]">
             {shipment.origin_port?.name || '—'} → {shipment.dest_port?.name || '—'}
           </p>
@@ -152,233 +503,191 @@ export default function ShipmentDetailPage({ params }) {
         <StatusBadge status={shipment.status} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader><h2 className="text-lg font-semibold text-[#0F172A]">Details</h2></CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-4 text-sm">
-                <div><dt className="text-[#64748B]">Priority</dt><dd className="font-medium mt-0.5"><Badge variant={shipment.priority === 'HIGH' || shipment.priority === 'CRITICAL' ? 'warning' : 'default'}>{shipment.priority}</Badge></dd></div>
-                <div><dt className="text-[#64748B]">ETA</dt><dd className="font-medium mt-0.5">{shipment.eta || '—'}</dd></div>
-                <div><dt className="text-[#64748B]">Created</dt><dd className="font-medium mt-0.5">{formatDateTime(shipment.created_at)}</dd></div>
-                <div><dt className="text-[#64748B]">Updated</dt><dd className="font-medium mt-0.5">{formatDateTime(shipment.updated_at)}</dd></div>
-                {shipment.cargo_description && <div className="col-span-2"><dt className="text-[#64748B]">Cargo</dt><dd className="font-medium mt-0.5">{shipment.cargo_description}</dd></div>}
-                {shipment.current_location && <div className="col-span-2"><dt className="text-[#64748B]">Current Location</dt><dd className="font-medium mt-0.5">{shipment.current_location}</dd></div>}
-                {shipment.pickup_address && <div className="col-span-2"><dt className="text-[#64748B]">Pickup Address</dt><dd className="font-medium mt-0.5">{shipment.pickup_address}</dd></div>}
-                {shipment.trucks_required && <div><dt className="text-[#64748B]">Trucks Required</dt><dd className="font-medium mt-0.5">{shipment.trucks_required}</dd></div>}
-                {shipment.assigned_driver && <div><dt className="text-[#64748B]">Assigned Driver</dt><dd className="font-medium mt-0.5">{shipment.assigned_driver.name}</dd></div>}
-              </dl>
-            </CardContent>
-          </Card>
-
-          {/* Customer prompt to provide pickup details after approval */}
-          {shipment.status === 'APPROVED' && user?.role === 'CUSTOMER' && (
-            <Card>
-              <CardContent>
-                <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <MapPin className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-[#0F172A]">Pickup Details Required</p>
-                    <p className="text-sm text-[#64748B] mt-1">Your shipment has been approved! Please provide your pickup location, cargo weight, and number of trucks needed.</p>
-                    <p className="text-xs text-[#94A3B8] mt-1">Use the &quot;Provide Details&quot; action below to submit your information.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Map section — shown when pickup location exists or driver is en route */}
-          {(shipment.pickup_lat || locationData?.pickup_lat || locationData?.driver_lat) && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-lg font-semibold text-[#0F172A] flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-blue-500" />
-                  {['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'].includes(shipment.status) ? 'Live Tracking' : 'Shipment Map'}
-                </h2>
-                {locationData?.updated_at && ['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'].includes(shipment.status) && (
-                  <p className="text-xs text-[#94A3B8]">Driver location updates every 15s</p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <ShipmentMap
-                  pickup={shipment.pickup_lat ? { lat: shipment.pickup_lat, lng: shipment.pickup_lng, address: shipment.pickup_address } : locationData?.pickup_lat ? { lat: locationData.pickup_lat, lng: locationData.pickup_lng, address: locationData.pickup_address } : null}
-                  destination={shipment.origin_port?.lat ? { lat: shipment.origin_port.lat, lng: shipment.origin_port.lon, name: shipment.origin_port.name } : locationData?.origin_lat ? { lat: locationData.origin_lat, lng: locationData.origin_lng, name: locationData.origin_port_name } : null}
-                  driverLocation={locationData?.driver_lat ? { lat: locationData.driver_lat, lng: locationData.driver_lng } : null}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {transitions.length > 0 && (
-            <Card>
-              <CardHeader><h2 className="text-lg font-semibold text-[#0F172A]">Available Actions</h2></CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {transitions.map(t => (
-                    <Button
-                      key={t.to_status}
-                      variant={t.to_status === 'REJECTED' || t.to_status === 'CANCELLED' ? 'danger' : 'secondary'}
-                      size="sm"
-                      disabled={transitioning}
-                      onClick={() => openTransition(t)}
-                    >
-                      → {t.to_status.replace(/_/g, ' ')}
-                      {t.required_form && <FileText className="w-3 h-3 ml-1" />}
-                    </Button>
-                  ))}
-                </div>
-                {transitions.some(t => t.required_form) && (
-                  <p className="text-xs text-[#94A3B8] mt-2"><FileText className="w-3 h-3 inline" /> = requires form</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-[#0F172A]">Documents ({documents.length})</h2>
-            </CardHeader>
-            <CardContent>
-              {documents.length === 0 ? (
-                <p className="text-sm text-[#64748B]">No documents submitted yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {documents.map(d => {
-                    const isExpanded = expandedDoc === d.id;
-                    return (
-                      <div key={d.id} className="border border-[#E2E8F0] rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => setExpandedDoc(isExpanded ? null : d.id)}
-                          className="w-full flex items-center justify-between p-3 hover:bg-[#F8FAFC] transition-colors text-left"
-                        >
-                          <div className="flex items-center gap-3">
-                            <FileText className="w-4 h-4 text-[#64748B]" />
-                            <div>
-                              <p className="text-sm font-medium text-[#0F172A]">{d.form_type?.replace(/_/g, ' ') || d.type?.replace(/_/g, ' ')}</p>
-                              <p className="text-xs text-[#64748B]">{formatDateTime(d.submitted_at || d.created_at)} · by {d.submitted_by_name || d.submitted_by || '—'}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={d.status === 'APPROVED' ? 'success' : d.status === 'REJECTED' ? 'danger' : 'default'}>{d.status}</Badge>
-                            {isExpanded ? <ChevronDown className="w-4 h-4 text-[#94A3B8]" /> : <ChevronRight className="w-4 h-4 text-[#94A3B8]" />}
-                          </div>
-                        </button>
-                        {isExpanded && d.data && (
-                          <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] p-4">
-                            <h4 className="text-xs font-medium text-[#64748B] uppercase tracking-wider mb-3">Form Data</h4>
-                            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                              {Object.entries(d.data).map(([key, value]) => (
-                                <div key={key} className="flex flex-col">
-                                  <dt className="text-xs text-[#94A3B8]">{key.replace(/_/g, ' ')}</dt>
-                                  <dd className="text-sm text-[#0F172A]">
-                                    {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (String(value) || '—')}
-                                  </dd>
-                                </div>
-                              ))}
-                            </dl>
-                            {d.notes && (
-                              <div className="mt-3 pt-3 border-t border-[#E2E8F0]">
-                                <p className="text-xs text-[#94A3B8]">Notes</p>
-                                <p className="text-sm text-[#0F172A]">{d.notes}</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {isExpanded && !d.data && (
-                          <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] p-4">
-                            <p className="text-sm text-[#94A3B8]">No form data recorded.</p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+      {/* Tab bar */}
+      <div className="border-b border-[#E2E8F0] bg-[#F8FAFC] -mx-0">
+        <div className="flex gap-0">
+          {TABS.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-3 text-sm font-medium transition-colors border-b-2 ${
+                activeTab === tab
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-[#64748B] hover:text-[#0F172A]'
+              }`}
+            >
+              {tab}
+              {tab === 'Documents' && documents.length > 0 && (
+                <span className="ml-1.5 text-xs bg-[#E2E8F0] text-[#64748B] px-1.5 py-0.5 rounded-full">{documents.length}</span>
               )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader><h2 className="text-lg font-semibold text-[#0F172A]">Timeline</h2></CardHeader>
-            <CardContent>
-              <ShipmentTimeline events={timeline} />
-            </CardContent>
-          </Card>
+              {tab === 'Actions' && transitions.length > 0 && (
+                <span className="ml-1.5 text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full">{transitions.length}</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* Tab content */}
+      <div>
+        {activeTab === 'Overview' && OverviewTab}
+        {activeTab === 'Timeline' && TimelineTab}
+        {activeTab === 'Documents' && DocumentsTab}
+        {activeTab === 'Actions' && ActionsTab}
+      </div>
+
       {/* Transition Form Modal */}
-      <Modal open={formModal.open} onClose={() => setFormModal({ open: false, toStatus: '', requiredForm: null })} title={`${formModal.toStatus?.replace(/_/g, ' ')} — ${formSchema?.title || 'Form'}`}>
+      <Modal
+        open={formModal.open}
+        onClose={() => setFormModal({ open: false, toStatus: '', requiredForm: null })}
+        title={`${formModal.toStatus?.replace(/_/g, ' ')} — ${formSchema?.title || 'Form'}`}
+      >
         {formSchema && (
           <form onSubmit={handleFormSubmit} className="space-y-5">
+            {/* POD package count banner */}
+            {podReleaseDoc?.data?.packages_count != null && (
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
+                <span>
+                  ℹ️ Customer release form reported{' '}
+                  <strong>{podReleaseDoc.data.packages_count}</strong> packages. Please verify the count below.
+                </span>
+              </div>
+            )}
+
             {formSchema.sections?.map((section, si) => (
               <div key={si} className="space-y-3">
-                {formSchema.sections.length > 1 && <h3 className="text-sm font-medium text-[#0F172A] border-b border-[#E2E8F0] pb-2">{section.title}</h3>}
+                {formSchema.sections.length > 1 && (
+                  <h3 className="text-sm font-medium text-[#0F172A] border-b border-[#E2E8F0] pb-2">{section.title}</h3>
+                )}
                 {section.fields?.map(field => {
-                  // Skip hidden fields in the UI (they're set programmatically)
                   if (field.type === 'hidden') return null;
+                  const isPrefilled = field.name in formData && formData[field.name] !== '' && formData[field.name] != null;
+                  const isNotesTextarea = field.type === 'textarea' && /notes/i.test(field.name);
+
                   return (
-                  <div key={field.name} className="space-y-1.5">
-                    <label className="block text-sm font-medium text-[#0F172A]">
-                      {field.label || field.name.replace(/_/g, ' ')}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
-                    </label>
-                    {field.type === 'location_search' ? (
-                      <LocationPicker
-                        value={formData[field.name] || ''}
-                        required={field.required}
-                        onChange={({ address, lat, lng }) => {
-                          setFormData(d => ({
-                            ...d,
-                            [field.name]: address,
-                            pickup_lat: String(lat),
-                            pickup_lng: String(lng),
-                          }));
-                        }}
-                      />
-                    ) : field.type === 'select' ? (
-                      <select
-                        className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required={field.required}
-                        value={formData[field.name] || ''}
-                        onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
-                      >
-                        <option value="">Select...</option>
-                        {(field.source
-                          ? (dynamicOptions[field.source] || [])
-                          : (field.options || []).map(opt => typeof opt === 'string' ? { value: opt, label: opt } : opt)
-                        ).map(opt => <option key={opt.value || opt} value={opt.value || opt}>{opt.label || opt}</option>)}
-                      </select>
-                    ) : field.type === 'textarea' ? (
-                      <textarea
-                        className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-14 resize-y"
-                        required={field.required}
-                        placeholder={field.required ? '' : 'Optional...'}
-                        value={formData[field.name] || ''}
-                        onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
-                      />
-                    ) : field.type === 'checkbox' ? (
-                      <input
-                        type="checkbox"
-                        className="rounded border-[#E2E8F0]"
-                        checked={formData[field.name] || false}
-                        onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.checked }))}
-                      />
-                    ) : (
-                      <input
-                        type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-                        className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required={field.required}
-                        value={formData[field.name] || ''}
-                        onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
-                      />
-                    )}
-                  </div>
+                    <div key={field.name} className="space-y-1.5">
+                      <label className="block text-sm font-medium text-[#0F172A]">
+                        {isNotesTextarea && <span className="mr-1 text-amber-600">📝 Note</span>}
+                        {field.label || field.name.replace(/_/g, ' ')}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+
+                      {field.type === 'location_search' ? (
+                        <LocationPicker
+                          value={formData[field.name] || ''}
+                          required={field.required}
+                          onChange={({ address, lat, lng }) => {
+                            setFormData(d => ({
+                              ...d,
+                              [field.name]: address,
+                              pickup_lat: String(lat),
+                              pickup_lng: String(lng),
+                            }));
+                          }}
+                        />
+                      ) : field.name === 'delivery_address' ? (
+                        <AddressAutocomplete
+                          value={formData[field.name] || ''}
+                          required={field.required}
+                          placeholder="Search delivery address…"
+                          onChange={({ address, lat, lng }) => {
+                            setFormData(d => ({
+                              ...d,
+                              delivery_address: address,
+                              ...(lat ? { delivery_lat: String(lat), delivery_lng: String(lng) } : {}),
+                            }));
+                          }}
+                        />
+                      ) : field.type === 'select' ? (
+                        <select
+                          className={`w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${isPrefilled ? 'bg-blue-50' : ''}`}
+                          required={field.required}
+                          value={formData[field.name] || ''}
+                          onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
+                        >
+                          <option value="">Select...</option>
+                          {(field.source
+                            ? (dynamicOptions[field.source] || [])
+                            : (field.options || []).map(opt => typeof opt === 'string' ? { value: opt, label: opt } : opt)
+                          ).map(opt => <option key={opt.value || opt} value={opt.value || opt}>{opt.label || opt}</option>)}
+                        </select>
+                      ) : field.type === 'textarea' ? (
+                        <textarea
+                          className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-14 resize-y ${
+                            isNotesTextarea
+                              ? 'border-amber-400 border-l-4 bg-amber-50'
+                              : isPrefilled
+                              ? 'border-[#E2E8F0] bg-blue-50'
+                              : 'border-[#E2E8F0]'
+                          }`}
+                          required={field.required}
+                          placeholder={field.required ? '' : 'Optional...'}
+                          value={formData[field.name] || ''}
+                          onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
+                        />
+                      ) : field.type === 'checkbox' ? (
+                        <input
+                          type="checkbox"
+                          className="rounded border-[#E2E8F0]"
+                          checked={formData[field.name] || false}
+                          onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.checked }))}
+                        />
+                      ) : field.type === 'date' ? (
+                        <div className="relative">
+                          <input
+                            type="date"
+                            className={`w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${isPrefilled ? 'bg-blue-50' : 'bg-white'}`}
+                            required={field.required}
+                            value={formData[field.name] || ''}
+                            onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
+                          />
+                        </div>
+                      ) : field.type === 'datetime' ? (
+                        <DateTimePicker
+                          id={field.name}
+                          name={field.name}
+                          required={field.required}
+                          value={formData[field.name] || ''}
+                          onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
+                          className={isPrefilled ? 'bg-blue-50' : ''}
+                        />
+                      ) : field.type === 'file_multiple' ? (
+                        <FileUpload
+                          multiple
+                          required={field.required}
+                          value={formData[field.name] || []}
+                          onChange={files => setFormData(d => ({ ...d, [field.name]: files }))}
+                          label="Upload Files · Multiple files supported"
+                        />
+                      ) : field.type === 'signature' ? (
+                        <input
+                          type="text"
+                          placeholder="Signature (type full name)"
+                          className={`w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${isPrefilled ? 'bg-blue-50' : ''}`}
+                          required={field.required}
+                          value={formData[field.name] || ''}
+                          onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
+                        />
+                      ) : (
+                        <input
+                          type={field.type === 'number' ? 'number' : field.type === 'tel' ? 'tel' : field.type === 'email' ? 'email' : 'text'}
+                          className={`w-full border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${isPrefilled ? 'bg-blue-50' : ''}`}
+                          required={field.required}
+                          value={formData[field.name] || ''}
+                          onChange={e => setFormData(d => ({ ...d, [field.name]: e.target.value }))}
+                        />
+                      )}
+
+                      {isPrefilled && field.type !== 'checkbox' && field.type !== 'file_multiple' && (
+                        <p className="text-xs text-blue-500">(Pre-filled — you can edit)</p>
+                      )}
+                    </div>
                   );
                 })}
               </div>
             ))}
+
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="secondary" onClick={() => setFormModal({ open: false, toStatus: '', requiredForm: null })}>Cancel</Button>
               <Button type="submit" disabled={transitioning}>{transitioning ? 'Submitting...' : 'Submit & Transition'}</Button>

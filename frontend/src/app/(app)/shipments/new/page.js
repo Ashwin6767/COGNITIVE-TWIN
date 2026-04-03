@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -12,6 +13,7 @@ import { CongestionWarningModal } from '@/components/shipments/CongestionWarning
 
 export default function NewShipmentPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [ports, setPorts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [congestionWarning, setCongestionWarning] = useState(null);
@@ -24,6 +26,13 @@ export default function NewShipmentPage() {
     priority: 'MEDIUM',
     notes: '',
   });
+
+  useEffect(() => {
+    // Redirect logistics managers — they review requests, not create them
+    if (user && user.role === 'LOGISTICS_MANAGER') {
+      router.replace('/shipments');
+    }
+  }, [user, router]);
 
   useEffect(() => {
     api.get('/ports/').then(setPorts).catch(() => {});

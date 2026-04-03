@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/shipments/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
-import { Truck, Package, MapPin, ArrowRight, Navigation, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Truck, Package, MapPin, ArrowRight, Navigation, Bell, X } from 'lucide-react';
 
 const ShipmentMap = dynamic(() => import('@/components/maps/ShipmentMap'), { ssr: false });
 
@@ -18,7 +18,8 @@ export default function DriverDashboard() {
   const { user } = useAuth();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [congestionAlerts, setCongestionAlerts] = useState([]);
+  const [urgentNotifications, setUrgentNotifications] = useState([]);
+  const [dismissedIds, setDismissedIds] = useState(new Set());
 
   useEffect(() => {
     api.get('/shipments/my')
@@ -28,37 +29,22 @@ export default function DriverDashboard() {
   }, []);
 
   useEffect(() => {
-    const portIds = [...new Set(shipments.flatMap(s => [s.origin_port?.id, s.dest_port?.id]).filter(Boolean))];
-    Promise.all(portIds.map(pid => api.get(`/congestion/${pid}`).catch(() => null)))
-      .then(results => {
-        const alerts = results.filter(r => r && r.congestion_level === 'HIGH');
-        setCongestionAlerts(alerts);
-      });
-  }, [shipments]);
-
-  // Fetch re-route events for current shipments
-  const [rerouteAlerts, setRerouteAlerts] = useState([]);
-  useEffect(() => {
-    const activeIds = shipments
-      .filter(s => ['GOODS_COLLECTED', 'IN_TRANSIT_TO_PORT', 'PICKUP_EN_ROUTE'].includes(s.status))
-      .map(s => s.id);
-    if (activeIds.length === 0) return;
-    // Check notifications for reroute alerts
-    api.get('/notifications/?page=1&limit=20').then(data => {
-      const items = data.items || [];
-      const reroutes = items.filter(n =>
-        n.title?.includes('Re-Route') && !n.is_read
-      );
-      setRerouteAlerts(reroutes);
-    }).catch(() => {});
-  }, [shipments]);
+    api.get('/notifications/?limit=10&unread=true')
+      .then((data) => {
+        const items = Array.isArray(data) ? data : (data.items || data.notifications || []);
+        setUrgentNotifications(items.filter(n => !n.read));
+      })
+      .catch(() => {});
+  }, []);
 
   const current = shipments.filter(s => ['DRIVER_ASSIGNED', 'PICKUP_EN_ROUTE', 'GOODS_COLLECTED', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT', 'LAST_MILE_ASSIGNED'].includes(s.status));
   const completed = shipments.filter(s => s.status === 'DELIVERED');
   const [updatingLocation, setUpdatingLocation] = useState(false);
-  const [showHandoverForm, setShowHandoverForm] = useState(null); // shipment ID or null
-  const [handoverData, setHandoverData] = useState({ packages_verified: '', condition_on_receipt: 'GOOD', driver_notes: '', confirmation_time: '' });
-  const [submittingHandover, setSubmittingHandover] = useState(false);
+
+  const dismissNotification = async (id) => {
+    setDismissedIds(prev => new Set([...prev, id]));
+    await api.put(`/notifications/${id}/read`, {}).catch(() => {});
+  };
 
   const updateMyLocation = async (shipmentId) => {
     setUpdatingLocation(true);
@@ -72,65 +58,35 @@ export default function DriverDashboard() {
     } catch { setUpdatingLocation(false); }
   };
 
-  const confirmHandover = async (shipmentId) => {
-    setSubmittingHandover(true);
-    try {
-      await api.post(`/workflow/${shipmentId}/transition`, {
-        to_status: 'GOODS_COLLECTED',
-        form_data: {
-          ...handoverData,
-          confirmation_time: handoverData.confirmation_time || new Date().toISOString(),
-        },
-      });
-      // Refresh shipments
-      const updated = await api.get('/shipments/my');
-      setShipments(updated);
-      setShowHandoverForm(null);
-      setHandoverData({ packages_verified: '', condition_on_receipt: 'GOOD', driver_notes: '', confirmation_time: '' });
-    } catch (e) {
-      alert(e?.response?.data?.detail || 'Failed to confirm handover');
-    } finally {
-      setSubmittingHandover(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-[#0F172A]">My Assignments</h1>
 
-      {congestionAlerts.length > 0 && (
-        <div className="space-y-2">
-          {congestionAlerts.map(alert => (
-            <div key={alert.port_id} className="flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200">
-              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-red-800">Congestion Alert: {alert.port_name}</p>
-                <p className="text-xs text-red-600">High congestion detected. Utilization: {alert.utilization ? Math.round(alert.utilization * 100) : '—'}%</p>
+      {/* Immediate Attention Banner */}
+      {urgentNotifications.filter(n => !dismissedIds.has(n.id)).length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Bell className="w-4 h-4 text-amber-600" />
+            <h3 className="text-sm font-semibold text-amber-800">Requires Immediate Attention</h3>
+          </div>
+          {urgentNotifications.filter(n => !dismissedIds.has(n.id)).slice(0, 5).map(n => (
+            <div key={n.id} className="flex items-start justify-between gap-3 bg-white rounded-lg border border-amber-100 p-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#0F172A] truncate">{n.title || n.message || 'Action required'}</p>
+                {n.shipment_id && (
+                  <Link href={`/shipments/${n.shipment_id}`} className="text-xs text-blue-600 hover:underline mt-0.5 block">
+                    View shipment {n.shipment_id} →
+                  </Link>
+                )}
+                {n.body && <p className="text-xs text-[#64748B] mt-0.5 line-clamp-2">{n.body}</p>}
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {rerouteAlerts.length > 0 && (
-        <div className="space-y-2">
-          {rerouteAlerts.map(alert => (
-            <div key={alert.id} className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-300">
-              <Navigation className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-900">🔄 Re-Route Required</p>
-                <p className="text-sm text-amber-800 mt-1">{alert.message}</p>
-                <div className="flex gap-2 mt-3">
-                  <Button size="sm" onClick={() => api.put(`/notifications/${alert.id}/read`).then(() => setRerouteAlerts(prev => prev.filter(a => a.id !== alert.id)))}>
-                    ✅ Acknowledge
-                  </Button>
-                  {alert.shipment_id && (
-                    <Link href={`/shipments/${alert.shipment_id}`}>
-                      <Button size="sm" variant="secondary">View Shipment</Button>
-                    </Link>
-                  )}
-                </div>
-              </div>
+              <button
+                onClick={() => dismissNotification(n.id)}
+                className="shrink-0 p-1 rounded hover:bg-amber-100 text-amber-600 transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           ))}
         </div>
@@ -173,66 +129,27 @@ export default function DriverDashboard() {
                   </div>
                 )}
 
-                {/* Share location button for en-route statuses */}
-                {['PICKUP_EN_ROUTE', 'GOODS_RELEASED', 'IN_TRANSIT_TO_PORT'].includes(s.status) && (
+                {/* Awaiting Port Entry banner — driver cannot process this anymore */}
+                {s.status === 'IN_TRANSIT_TO_PORT' && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <Package className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-800">Awaiting Port Entry Processing</p>
+                        <p className="text-xs text-amber-700 mt-0.5">You have arrived at the port. A Port Officer will process your entry declaration. Please wait at the gate.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Share location button for en-route statuses (excluding IN_TRANSIT_TO_PORT handled above) */}
+                {['PICKUP_EN_ROUTE', 'GOODS_RELEASED'].includes(s.status) && (
                   <div className="mt-3 pt-3 border-t border-blue-200">
                     <Button size="sm" variant="secondary" disabled={updatingLocation} onClick={() => updateMyLocation(s.id)}>
                       <Navigation className="w-3.5 h-3.5 mr-1.5" />
                       {updatingLocation ? 'Sharing...' : 'Share My Location'}
                     </Button>
                     <p className="text-xs text-[#94A3B8] mt-1">Share your location so the customer and manager can track you.</p>
-                  </div>
-                )}
-
-                {s.status === 'GOODS_RELEASED' && (
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    {showHandoverForm === s.id ? (
-                      <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-[#0F172A]">Confirm Goods Handover</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-[#64748B] mb-1">Packages Verified</label>
-                            <input type="number" className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm"
-                              value={handoverData.packages_verified}
-                              onChange={e => setHandoverData(prev => ({...prev, packages_verified: e.target.value}))}
-                              placeholder="Number of packages"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-[#64748B] mb-1">Condition</label>
-                            <select className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm"
-                              value={handoverData.condition_on_receipt}
-                              onChange={e => setHandoverData(prev => ({...prev, condition_on_receipt: e.target.value}))}
-                            >
-                              <option value="GOOD">Good</option>
-                              <option value="MINOR_DAMAGE">Minor Damage</option>
-                              <option value="DAMAGED">Damaged</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-[#64748B] mb-1">Notes (optional)</label>
-                          <textarea className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-sm" rows={2}
-                            value={handoverData.driver_notes}
-                            onChange={e => setHandoverData(prev => ({...prev, driver_notes: e.target.value}))}
-                            placeholder="Any notes about the goods..."
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => confirmHandover(s.id)} disabled={submittingHandover || !handoverData.packages_verified}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                            {submittingHandover ? 'Confirming...' : '✅ Confirm Handover'}
-                          </Button>
-                          <Button size="sm" variant="secondary" onClick={() => setShowHandoverForm(null)}>Cancel</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button size="sm" onClick={() => setShowHandoverForm(s.id)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                        ✅ Confirm Goods Handover
-                      </Button>
-                    )}
-                    <p className="text-xs text-[#94A3B8] mt-1">Confirm you have safely received the goods from the customer.</p>
                   </div>
                 )}
               </div>

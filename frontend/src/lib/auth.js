@@ -30,7 +30,8 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const data = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', data.access_token);
-    const me = await api.get('/auth/me');
+    // Use the user object returned directly from /auth/login to avoid a second round-trip
+    const me = data.user || await api.get('/auth/me');
     localStorage.setItem('user', JSON.stringify(me));
     setUser(me);
     return me;

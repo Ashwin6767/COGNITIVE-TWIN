@@ -166,6 +166,36 @@ FORM_SCHEMAS: dict[str, dict] = {
             },
         ],
     },
+    "GOODS_COLLECTED_CONFIRMATION": {
+        "title": "Goods Collected Confirmation",
+        "sections": [
+            {
+                "title": "Package Verification",
+                "fields": [
+                    {
+                        "name": "verified_packages_count",
+                        "type": "number",
+                        "label": "Verified Package Count",
+                        "required": True,
+                        "help": "Count the packages and confirm the number"
+                    },
+                    {
+                        "name": "condition_on_collection",
+                        "type": "select",
+                        "label": "Condition on Collection",
+                        "required": True,
+                        "options": ["GOOD", "MINOR_DAMAGE", "DAMAGED"]
+                    },
+                    {
+                        "name": "collection_notes",
+                        "type": "textarea",
+                        "label": "Collection Notes",
+                        "required": False
+                    },
+                ],
+            },
+        ],
+    },
     "PORT_ENTRY_DECLARATION": {
         "title": "Port Entry Declaration",
         "sections": [
@@ -256,7 +286,7 @@ FORM_SCHEMAS: dict[str, dict] = {
             {
                 "title": "Shipment Information",
                 "fields": [
-                    {"name": "bol_number", "type": "text", "label": "B/L Number", "required": True},
+                    {"name": "bol_number", "type": "text", "label": "BOL Number", "required": True},
                     {"name": "shipper_name", "type": "text", "label": "Shipper Name", "required": True},
                     {"name": "consignee_name", "type": "text", "label": "Consignee Name", "required": True},
                     {"name": "vessel_name", "type": "text", "label": "Vessel Name", "required": True},
@@ -384,6 +414,13 @@ FORM_SCHEMAS: dict[str, dict] = {
                     {"name": "damage_notes", "type": "textarea", "label": "Damage Notes", "required": False},
                     {"name": "signature", "type": "signature", "label": "Signature", "required": True},
                     {"name": "photos", "type": "file_multiple", "label": "Photos", "required": False},
+                    {
+                        "name": "override_reason",
+                        "type": "textarea",
+                        "label": "Override Reason (if package count differs)",
+                        "required": False,
+                        "help": "Only required if package count does not match the release form"
+                    },
                 ],
             },
         ],
