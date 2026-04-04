@@ -18,8 +18,11 @@ export function NotificationProvider({ children }) {
 
   // Build WebSocket URL with JWT token
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const explicitWs = process.env.NEXT_PUBLIC_WS_URL;
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-  const wsBase = apiBase.replace(/^http/, 'ws').replace(/\/api$/, '');
+  const wsBase = explicitWs
+    ? explicitWs.replace(/\/api\/ws\/stream\/?$/, '')
+    : apiBase.replace(/^http/, 'ws').replace(/\/api$/, '');
   const wsUrl = token ? `${wsBase}/api/ws/stream?token=${token}` : null;
 
   // Fetch initial unread count
